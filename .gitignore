@@ -1,0 +1,6 @@
+catering.db
+target/
+*.class
+*.jar
+.DS_Store
+*.log
