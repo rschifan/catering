@@ -3,7 +3,6 @@ package catering.businesslogic.event;
 import java.sql.*;
 import java.util.*;
 import java.sql.Date;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import catering.businesslogic.menu.Menu;
@@ -273,5 +272,69 @@ public class Service {
     public String toString() {
         return "Service [id=" + id + ", name=" + name + ", date=" + date + ", location=" + location +
                 ", menu=" + (menu != null ? menu.getTitle() : "none") + "]";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+
+        Service other = (Service) obj;
+
+        // If both sections have valid IDs, compare by ID
+        if (this.id > 0 && other.id > 0) {
+            return this.id == other.id;
+        }
+        
+        // Otherwise, compare by name and items
+        boolean nameMatch = (this.name == null && other.name == null) ||
+                (this.name != null && this.name.equals(other.name));
+
+        // If names don't match, sections are not equal
+        if (!nameMatch)
+            return false;
+
+        // If dates don't match, sections are not equal
+        boolean dateMatch = (this.date == null && other.date == null) ||
+        (this.date != null && this.date.equals(other.date));
+
+        if (!dateMatch)
+            return false;
+
+        // If times don't match, sections are not equal
+        boolean timeStartMatch = (this.timeStart == null && other.timeStart == null) ||
+        (this.timeStart != null && this.timeStart.equals(other.timeStart));
+
+        if (!timeStartMatch)
+            return false;
+        
+        boolean timeEndMatch = (this.timeEnd == null && other.timeEnd == null) ||
+            (this.timeEnd != null && this.timeEnd.equals(other.timeEnd));
+    
+        if (!timeEndMatch)
+            return false;        
+
+        // If locations don't match, sections are not equal
+        boolean locationMatch = (this.location == null && other.location == null) ||
+        (this.location != null && this.location.equals(other.location));
+
+        if (!locationMatch)
+            return false;
+
+        // If locations don't match, sections are not equal
+        boolean menuMatch = (this.menu == null && other.menu == null) ||
+        (this.menu != null && this.menu.equals(other.menu));
+
+        if (!menuMatch)
+            return false;
+
+        // If events don't match, sections are not equal
+        if (this.eventId > 0 && other.eventId > 0) {
+            return this.eventId == other.eventId;
+        }
+
+        return true;
     }
 }

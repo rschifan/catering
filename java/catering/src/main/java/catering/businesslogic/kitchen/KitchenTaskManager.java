@@ -3,8 +3,8 @@ package catering.businesslogic.kitchen;
 import catering.businesslogic.CatERing;
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.event.Event;
-import catering.businesslogic.event.EventManager;
 import catering.businesslogic.event.Service;
+import catering.businesslogic.recipe.KitchenProcess;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 
@@ -23,30 +23,41 @@ public class KitchenTaskManager {
         this.eventReceivers.add(rec);
     }
 
-    public SummarySheet createSumSheet() throws UseCaseLogicException {
+    public SummarySheet generateSummarySheet(Event event, Service service) throws UseCaseLogicException {
 
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
 
         if (!user.isChef())
-            throw new UseCaseLogicException();
-
-        EventManager eventManager = CatERing.getInstance().getEventManager();
-        Event event = eventManager.getSelectedEvent();
+            throw new UseCaseLogicException("User is not a chef");
 
         if (event == null)
-            throw new UseCaseLogicException("No event selected");
-
-        Service service = eventManager.getCurrentService();
+            throw new UseCaseLogicException("Event not specified");
 
         if (service == null)
-            throw new UseCaseLogicException("No service selected");
+            throw new UseCaseLogicException("Service not specified");
+        
+        if (!event.containsService(service))
+            throw new UseCaseLogicException("Event does not include service");
 
-        SummarySheet summarySheet = new SummarySheet(service, user);
+        if (!user.equals(event.getChef()))
+            throw new UseCaseLogicException("User not assigned chef");
+        
+        if (service.getMenu() == null)
+            throw new UseCaseLogicException("Service lacks menu");
 
-        this.setCurrentSumSheet(summarySheet);
-        this.notifySumSheetAdded(summarySheet);
+        ArrayList<KitchenProcess> allKitchenProcesses = service.getMenu().getNeededKitchenProcesses();
 
-        return summarySheet;
+        SummarySheet newSummarySheet = new SummarySheet(service, user);
+
+        for(KitchenProcess process: allKitchenProcesses) {
+            Task task = new Task(process);
+            newSummarySheet.addTask(task);
+        }
+
+        this.setCurrentSumSheet(newSummarySheet);
+        this.notifySheetGenerated(newSummarySheet);
+
+        return newSummarySheet;
     }
 
     public ArrayList<SummarySheet> loadAllSumSheets() {
@@ -205,9 +216,9 @@ public class KitchenTaskManager {
         }
     }
 
-    private void notifySumSheetAdded(SummarySheet summarySheet) {
+    private void notifySheetGenerated(SummarySheet summarySheet) {
         for (KitchenTaskEventReceiver er : eventReceivers) {
-            er.updateSumSheetCreated(summarySheet);
+            er.updateSheetGenerated(summarySheet);
         }
     }
 

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import catering.businesslogic.recipe.KitchenProcess;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
@@ -473,6 +474,19 @@ public class Menu {
         }
         return null;
     }
+
+    public ArrayList<KitchenProcess> getNeededKitchenProcesses() {
+        ArrayList<KitchenProcess> allKitchenProcesses = new ArrayList<>();        
+
+        for (MenuItem item : this.getItems()) {
+            Recipe recipe = item.getRecipe();
+            allKitchenProcesses.add(recipe);
+            allKitchenProcesses.addAll(recipe.getPreparations());
+        }
+
+        return allKitchenProcesses;
+    }
+
 
     // ===== FEATURE MANAGEMENT =====
 

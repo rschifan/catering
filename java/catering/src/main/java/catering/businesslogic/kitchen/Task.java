@@ -16,7 +16,7 @@ public class Task {
 
     private int id;
     private String description;
-    private KitchenProcess itemKitchenProcess;
+    private KitchenProcess kitchenProcess;
     private int quantity;
     private int portions;
     private boolean ready;
@@ -31,7 +31,7 @@ public class Task {
 
     public Task(KitchenProcess rec, String desc) {
         id = 0;
-        itemKitchenProcess = rec;
+        kitchenProcess = rec;
         description = desc;
         type = rec.isRecipe();
         ready = false;
@@ -42,7 +42,7 @@ public class Task {
     public Task(Task mi) {
         this.id = 0;
         this.description = mi.description;
-        this.itemKitchenProcess = mi.itemKitchenProcess;
+        this.kitchenProcess = mi.kitchenProcess;
         this.type = mi.type;
     }
 
@@ -55,7 +55,7 @@ public class Task {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
                 ps.setInt(1, id);
-                ps.setInt(2, taskList.get(batchCount).itemKitchenProcess.getId());
+                ps.setInt(2, taskList.get(batchCount).kitchenProcess.getId());
                 ps.setString(3, taskList.get(batchCount).description);
                 ps.setBoolean(4, taskList.get(batchCount).type);
                 ps.setInt(5, batchCount);
@@ -77,9 +77,9 @@ public class Task {
 
         PersistenceManager.executeUpdate(query,
                 id,
-                task.itemKitchenProcess.getId(),
+                task.kitchenProcess.getId(),
                 task.getDescription(),
-                task.itemKitchenProcess.isRecipe(),
+                task.kitchenProcess.isRecipe(),
                 taskPosition,
                 task.ready,
                 task.quantity,
@@ -115,9 +115,9 @@ public class Task {
         for (int i = 0; i < recipeIds.size(); i++) {
             Task t = taskArrayList.get(i);
             if (types.get(i)) {
-                t.itemKitchenProcess = Recipe.loadRecipe(recipeIds.get(i));
+                t.kitchenProcess = Recipe.loadRecipe(recipeIds.get(i));
             } else {
-                t.itemKitchenProcess = Preparation.loadPreparationById(recipeIds.get(i));
+                t.kitchenProcess = Preparation.loadPreparationById(recipeIds.get(i));
             }
 
         }
@@ -158,9 +158,9 @@ public class Task {
 
         Task t = taskHolder[0];
         if (types.get(0)) {
-            t.itemKitchenProcess = Recipe.loadRecipe(ids.get(0));
+            t.kitchenProcess = Recipe.loadRecipe(ids.get(0));
         } else {
-            t.itemKitchenProcess = Preparation.loadPreparationById(ids.get(0));
+            t.kitchenProcess = Preparation.loadPreparationById(ids.get(0));
         }
 
         return t;
@@ -194,7 +194,7 @@ public class Task {
     }
 
     public String toString() {
-        return itemKitchenProcess.getName() + " " + description + " " + " " +
+        return kitchenProcess.getName() + " " + description + " " + " " +
                 " " + ready + " " + portions + " " + quantity;
     }
 
@@ -207,11 +207,11 @@ public class Task {
     }
 
     public KitchenProcess getKitchenProcess() {
-        return itemKitchenProcess;
+        return kitchenProcess;
     }
 
-    public void setKitchenProcess(KitchenProcess itemKitchenProcess) {
-        this.itemKitchenProcess = itemKitchenProcess;
+    public void setKitchenProcess(KitchenProcess kitchenProcess) {
+        this.kitchenProcess = kitchenProcess;
     }
 
     public Integer getQuantity() {

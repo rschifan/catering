@@ -75,13 +75,9 @@ public class SummarySheetTest {
     void testSummarySheetCreation() {
         LOGGER.info("Testing summary sheet creation");
 
-        // Set up event and service in the app
-        app.getEventManager().setSelectedEvent(testEvent);
-        app.getEventManager().setCurrentService(testService);
-
         try {
             // Create summary sheet
-            SummarySheet sheet = app.getKitchenTaskManager().createSumSheet();
+            SummarySheet sheet = app.getKitchenTaskManager().generateSummarySheet(testEvent, testService);
 
             // Verify summary sheet was created properly
             assertNotNull(sheet, "Summary sheet should not be null");
@@ -100,13 +96,9 @@ public class SummarySheetTest {
     void testTaskAssignment() {
         LOGGER.info("Testing task assignment to cook");
 
-        // Set up event and service in the app
-        app.getEventManager().setSelectedEvent(testEvent);
-        app.getEventManager().setCurrentService(testService);
-
         try {
             // Create summary sheet
-            SummarySheet sheet = app.getKitchenTaskManager().createSumSheet();
+            SummarySheet sheet = app.getKitchenTaskManager().generateSummarySheet(testEvent, testService);
             assertNotNull(sheet, "Summary sheet should not be null");
             assertTrue(sheet.getTaskList().size() > 0, "Task list should contain tasks");
 

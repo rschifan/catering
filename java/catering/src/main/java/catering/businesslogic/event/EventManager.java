@@ -56,7 +56,7 @@ public class EventManager {
      * 
      * @return List of all events
      */
-    public ArrayList<Event> getEventInfo() {
+    public ArrayList<Event> getEvents() {
         return Event.loadAllEvents();
     }
 
@@ -122,7 +122,7 @@ public class EventManager {
      * @param organizer User organizing the event
      * @return The newly created event
      */
-    public Event createEvent(String name, Date dateStart, Date dateEnd, User organizer) {
+    public Event createEvent(String name, Date dateStart, Date dateEnd, User chef) {
         try {
             LOGGER.info("Creating new event: " + name);
 
@@ -130,7 +130,7 @@ public class EventManager {
             event.setName(name);
             event.setDateStart(dateStart);
             event.setDateEnd(dateEnd);
-            event.setOrganizer(organizer);
+            event.setChef(chef);
 
             // Save to database
             event.saveNewEvent();

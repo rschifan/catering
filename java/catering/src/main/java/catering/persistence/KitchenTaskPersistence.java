@@ -8,7 +8,7 @@ import catering.businesslogic.kitchen.Task;
 public class KitchenTaskPersistence implements KitchenTaskEventReceiver {
 
     @Override
-    public void updateSumSheetCreated(SummarySheet summarySheet) {
+    public void updateSheetGenerated(SummarySheet summarySheet) {
         SummarySheet.saveNewSumSheet(summarySheet);
     }
 

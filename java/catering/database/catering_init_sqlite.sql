@@ -70,7 +70,7 @@ CREATE TABLE
         `name` TEXT,
         `date_start` DATE,
         `date_end` DATE,
-        `organizer_id` INTEGER NOT NULL
+        `chef_id` INTEGER NOT NULL
     );
 
 CREATE TABLE
@@ -1013,8 +1013,8 @@ FROM Recipes r WHERE r.name = 'Gelato Artigianale';
 -- ===== ADD SAMPLE EVENT AND SERVICES =====
 
 -- Create a new event
-INSERT INTO Events (name, date_start, date_end, organizer_id) VALUES 
-('Gala Aziendale Annuale', date('2025-06-15'), date('2025-06-16'), 7);  -- Organized by Giovanni
+INSERT INTO Events (name, date_start, date_end, chef_id) VALUES 
+('Gala Aziendale Annuale', date('2025-06-15'), date('2025-06-16'), 5);  -- Assigned to Antonio
 
 -- Create two services for this event
 -- First service (lunch): assigned to chef Antonio (ID 5) with the existing menu (ID 1)

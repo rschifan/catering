@@ -22,7 +22,7 @@ public class Event {
     private String name;
     private Date dateStart;
     private Date dateEnd;
-    private User organizer;
+    private User chef;
     private ArrayList<Service> services;
 
     public Event() {
@@ -67,20 +67,20 @@ public class Event {
         this.dateEnd = dateEnd;
     }
 
-    public User getOrganizer() {
-        return organizer;
+    public User getChef() {
+        return chef;
     }
 
-    public int getOrganizerId() {
-        return organizer != null ? organizer.getId() : 0;
+    public int getChefId() {
+        return chef != null ? chef.getId() : 0;
     }
 
-    public void setOrganizer(User organizer) {
-        this.organizer = organizer;
+    public void setChef(User chef) {
+        this.chef = chef;
     }
 
-    public void setOrganizerId(int organizerId) {
-        this.organizer = User.load(organizerId);
+    public void setChefId(int chefId) {
+        this.chef = User.load(chefId);
     }
 
     public ArrayList<Service> getServices() {
@@ -105,14 +105,21 @@ public class Event {
         }
     }
 
+    public boolean containsService(Service service) {
+        if (services != null) {
+            return services.contains(service);
+        }
+        return false;
+    }
+
     // Database operations
     public void saveNewEvent() {
-        String query = "INSERT INTO Events (name, date_start, date_end, organizer_id) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO Events (name, date_start, date_end, chef_id) VALUES (?, ?, ?, ?)";
 
         Long startTimestamp = (dateStart != null) ? dateStart.getTime() : null;
         Long endTimestamp = (dateEnd != null) ? dateEnd.getTime() : null;
 
-        PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getOrganizerId());
+        PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId());
 
         // Get the ID of the newly inserted event
         id = PersistenceManager.getLastId();
@@ -121,12 +128,12 @@ public class Event {
     }
 
     public void updateEvent() {
-        String query = "UPDATE Events SET name = ?, date_start = ?, date_end = ?, organizer_id = ? WHERE id = ?";
+        String query = "UPDATE Events SET name = ?, date_start = ?, date_end = ?, chef_id = ? WHERE id = ?";
 
         Long startTimestamp = (dateStart != null) ? dateStart.getTime() : null;
         Long endTimestamp = (dateEnd != null) ? dateEnd.getTime() : null;
 
-        PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getOrganizerId(), id);
+        PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId(), id);
 
         LOGGER.info("Updated event: " + name + " (ID: " + id + ")");
     }
@@ -162,7 +169,7 @@ public class Event {
                 e.name = rs.getString("name");
                 e.dateStart = DateUtils.getDateFromResultSet(rs, "date_start");
                 e.dateEnd = DateUtils.getDateFromResultSet(rs, "date_end");
-                e.organizer = User.load(rs.getInt("organizer_id"));
+                e.chef = User.load(rs.getInt("chef_id"));
                 events.add(e);
             }
         });
@@ -201,9 +208,9 @@ public class Event {
                 e.dateEnd = DateUtils.getDateFromResultSet(rs, "date_end");
 
                 try {
-                    e.organizer = User.load(rs.getInt("organizer_id"));
+                    e.chef = User.load(rs.getInt("chef_id"));
                 } catch (Exception ex) {
-                    e.organizer = null;
+                    e.chef = null;
                 }
 
                 eventHolder[0] = e;
