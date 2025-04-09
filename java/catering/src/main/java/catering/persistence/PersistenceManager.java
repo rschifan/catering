@@ -19,8 +19,8 @@ import java.io.OutputStreamWriter;
 public class PersistenceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(PersistenceManager.class);
-    private static final String DB_PATH = "database\\catering.db";
-    private static final String SCRIPT_PATH = "database\\catering_init_sqlite.sql";
+    private static final String DB_PATH = java.nio.file.Paths.get("database", "catering.db").toString();
+    private static final String SCRIPT_PATH = java.nio.file.Paths.get("database", "catering_init_sqlite.sql").toString();
     private static final String URL = "jdbc:sqlite:" + DB_PATH;
 
     private static int lastId;
