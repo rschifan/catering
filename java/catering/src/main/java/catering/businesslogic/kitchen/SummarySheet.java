@@ -20,7 +20,7 @@ public class SummarySheet {
     private int id;
     private Service serviceInfo;
     private User owner;
-    private ArrayList<Task> taskList;
+    private ArrayList<KitchenTask> taskList;
     private ArrayList<Assignment> assignmentList;
 
     private SummarySheet() {
@@ -37,7 +37,7 @@ public class SummarySheet {
 
         for (MenuItem mi : menuItems) {
             // Add the main recipe task
-            Task mainTask = new Task(mi.getRecipe(), mi.getDescription());
+            KitchenTask mainTask = new KitchenTask(mi.getRecipe(), mi.getDescription());
             taskList.add(mainTask);
 
             // Get all preparations from the recipe and add them as separate tasks
@@ -46,7 +46,7 @@ public class SummarySheet {
                 if (preparations != null) {
                     for (Preparation prep : preparations) {
                         // Create a task for each preparation with appropriate details
-                        Task prepTask = new Task(prep, prep.getName());
+                        KitchenTask prepTask = new KitchenTask(prep, prep.getName());
                         taskList.add(prepTask);
                     }
                 }
@@ -85,7 +85,7 @@ public class SummarySheet {
         for (int i = 0; i < ownerIds.size(); i++) {
             SummarySheet s = summarySheets.get(i);
             s.owner = User.load(ownerIds.get(i));
-            s.taskList = Task.loadAllTasksBySumSheetId(s.id);
+            s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
             s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
         }
 
@@ -118,7 +118,7 @@ public class SummarySheet {
                 s.owner = User.load(ownerId);
 
                 // Load related data
-                s.taskList = Task.loadAllTasksBySumSheetId(s.id);
+                s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
                 s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
 
                 sheetHolder[0] = s;
@@ -151,7 +151,7 @@ public class SummarySheet {
                 s.owner = User.load(ownerId);
 
                 // Load related data
-                s.taskList = Task.loadAllTasksBySumSheetId(s.id);
+                s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
                 s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
 
                 summarySheets.add(s);
@@ -177,7 +177,7 @@ public class SummarySheet {
         });
     }
 
-    public int getTaskPosition(Task t) {
+    public int getTaskPosition(KitchenTask t) {
         return taskList.indexOf(t);
     }
 
@@ -205,12 +205,12 @@ public class SummarySheet {
             }
 
             if (!s.taskList.isEmpty()) {
-                Task.saveAllNewTasks(s.id, s.taskList);
+                KitchenTask.saveAllNewTasks(s.id, s.taskList);
             }
         }
     }
 
-    public Task addTask(Task t) {
+    public KitchenTask addTask(KitchenTask t) {
         this.taskList.add(t);
         return t;
     }
@@ -223,16 +223,16 @@ public class SummarySheet {
         return taskList.size();
     }
 
-    public void moveTask(Task t, int pos) {
+    public void moveTask(KitchenTask t, int pos) {
         taskList.remove(t);
         taskList.add(pos, t);
     }
 
-    public ArrayList<Task> getTaskList() {
+    public ArrayList<KitchenTask> getTaskList() {
         return taskList;
     }
 
-    public Assignment addAssignment(Task t, Shift s, User cook) {
+    public Assignment addAssignment(KitchenTask t, Shift s, User cook) {
         Assignment ass = new Assignment(t, s, cook);
         assignmentList.add(ass);
         return ass;
@@ -260,14 +260,14 @@ public class SummarySheet {
         return assignmentList.remove(assignmentList.indexOf(a));
     }
 
-    public Task setTaskReady(Task t) throws UseCaseLogicException {
+    public KitchenTask setTaskReady(KitchenTask t) throws UseCaseLogicException {
         if (!taskList.contains(t))
             throw new UseCaseLogicException();
         t.setReady();
         return t;
     }
 
-    public Task addTaskInformation(Task task, int quantity, int portions, long minutes) {
+    public KitchenTask addTaskInformation(KitchenTask task, int quantity, int portions, long minutes) {
         task.setQuantity(quantity);
         task.setPortions(portions);
 
@@ -314,7 +314,7 @@ public class SummarySheet {
         if (taskList != null && !taskList.isEmpty()) {
             sb.append("]\nTasks:");
             int count = 1;
-            for (Task task : taskList) {
+            for (KitchenTask task : taskList) {
                 sb.append("\n  ").append(count++).append(". ");
                 sb.append(task.isReady() ? "[✓] " : "[ ] ");
                 sb.append(task.getDescription());
@@ -343,7 +343,7 @@ public class SummarySheet {
                 sb.append("\n  ").append(count++).append(". ");
 
                 // Task info
-                Task task = ass.getTask();
+                KitchenTask task = ass.getTask();
                 sb.append("Task: ").append(task != null ? task.getDescription() : "none");
 
                 // Cook info

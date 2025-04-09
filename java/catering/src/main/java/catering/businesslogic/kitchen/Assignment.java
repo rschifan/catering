@@ -18,17 +18,17 @@ public class Assignment {
 
     private int id;
     private Shift shift;
-    private Task task;
+    private KitchenTask task;
     private User cook;
 
     // Constructors
-    public Assignment(Task task, Shift shift, User cook) {
+    public Assignment(KitchenTask task, Shift shift, User cook) {
         this.task = task;
         this.shift = shift;
         this.cook = cook;
     }
 
-    public Assignment(Task task, Shift shift) {
+    public Assignment(KitchenTask task, Shift shift) {
         this.task = task;
         this.shift = shift;
         this.cook = null;
@@ -59,7 +59,7 @@ public class Assignment {
      * 
      * @return The Task object
      */
-    public Task getTask() {
+    public KitchenTask getTask() {
         return task;
     }
 
@@ -105,7 +105,7 @@ public class Assignment {
         for (int i = 0; i < shiftIds.size(); i++) {
             Assignment a = assignments.get(i);
             a.cook = User.load(cookIds.get(i));
-            a.task = Task.loadTaskById(taskIds.get(i));
+            a.task = KitchenTask.loadTaskById(taskIds.get(i));
             a.shift = Shift.loadItemById(shiftIds.get(i));
 
         }

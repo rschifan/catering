@@ -35,13 +35,13 @@ public class KitchenTaskManager {
 
         if (service == null)
             throw new UseCaseLogicException("Service not specified");
-        
+
         if (!event.containsService(service))
             throw new UseCaseLogicException("Event does not include service");
 
         if (!user.equals(event.getChef()))
             throw new UseCaseLogicException("User not assigned chef");
-        
+
         if (service.getMenu() == null)
             throw new UseCaseLogicException("Service lacks menu");
 
@@ -49,8 +49,8 @@ public class KitchenTaskManager {
 
         SummarySheet newSummarySheet = new SummarySheet(service, user);
 
-        for(KitchenProcess process: allKitchenProcesses) {
-            Task task = new Task(process);
+        for (KitchenProcess process : allKitchenProcesses) {
+            KitchenTask task = new KitchenTask(process);
             newSummarySheet.addTask(task);
         }
 
@@ -74,12 +74,12 @@ public class KitchenTaskManager {
         return ss;
     }
 
-    public void addKitchenTask(Task t) {
-        Task added = currentSumSheet.addTask(t);
+    public void addKitchenTask(KitchenTask t) {
+        KitchenTask added = currentSumSheet.addTask(t);
         notifyTaskAdded(added);
     }
 
-    public void moveTask(Task t, int pos) throws UseCaseLogicException {
+    public void moveTask(KitchenTask t, int pos) throws UseCaseLogicException {
         if (currentSumSheet == null || currentSumSheet.getTaskPosition(t) < 0)
             throw new UseCaseLogicException();
         if (pos < 0 || pos >= currentSumSheet.getTaskListSize())
@@ -89,7 +89,7 @@ public class KitchenTaskManager {
         this.notifyTaskListSorted();
     }
 
-    public void addTaskInformation(Task task, int quantity, int portions, long minutes)
+    public void addTaskInformation(KitchenTask task, int quantity, int portions, long minutes)
             throws SummarySheetException, UseCaseLogicException {
         if (currentSumSheet == null)
             throw new UseCaseLogicException();
@@ -102,16 +102,16 @@ public class KitchenTaskManager {
         if (minutes < 0)
             throw new IllegalArgumentException("Minutes must be >= 0");
 
-        Task t = currentSumSheet.addTaskInformation(task, quantity, portions, minutes);
+        KitchenTask t = currentSumSheet.addTaskInformation(task, quantity, portions, minutes);
 
         notifyTaskChanged(t);
     }
 
-    public Assignment assignTask(Task t, Shift s) throws UseCaseLogicException {
+    public Assignment assignTask(KitchenTask t, Shift s) throws UseCaseLogicException {
         return assignTask(t, s, null);
     }
 
-    public Assignment assignTask(Task t, Shift s, User cook) throws UseCaseLogicException {
+    public Assignment assignTask(KitchenTask t, Shift s, User cook) throws UseCaseLogicException {
         if (currentSumSheet == null) {
             throw new UseCaseLogicException("Cannot assign task because there is no active summary sheet.");
         }
@@ -165,8 +165,8 @@ public class KitchenTaskManager {
         currentSumSheet = summarySheet;
     }
 
-    public void setTaskReady(Task t) throws UseCaseLogicException {
-        Task task = currentSumSheet.setTaskReady(t);
+    public void setTaskReady(KitchenTask t) throws UseCaseLogicException {
+        KitchenTask task = currentSumSheet.setTaskReady(t);
         notifyTaskChanged(task);
     }
 
@@ -175,7 +175,7 @@ public class KitchenTaskManager {
         notifyAssignmentDeleted(ass);
     }
 
-    private void notifyTaskChanged(Task task) {
+    private void notifyTaskChanged(KitchenTask task) {
         for (KitchenTaskEventReceiver er : eventReceivers) {
             er.updateTaskChanged(task);
         }
@@ -210,7 +210,7 @@ public class KitchenTaskManager {
         }
     }
 
-    private void notifyTaskAdded(Task added) {
+    private void notifyTaskAdded(KitchenTask added) {
         for (KitchenTaskEventReceiver er : eventReceivers) {
             er.updateTaskAdded(currentSumSheet, added);
         }

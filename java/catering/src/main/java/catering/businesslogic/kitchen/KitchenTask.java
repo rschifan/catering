@@ -12,7 +12,7 @@ import catering.persistence.BatchUpdateHandler;
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
 
-public class Task {
+public class KitchenTask {
 
     private int id;
     private String description;
@@ -22,14 +22,14 @@ public class Task {
     private boolean ready;
     private boolean type;
 
-    private Task() {
+    private KitchenTask() {
     }
 
-    public Task(KitchenProcess rec) {
+    public KitchenTask(KitchenProcess rec) {
         this(rec, rec.getName());
     }
 
-    public Task(KitchenProcess rec, String desc) {
+    public KitchenTask(KitchenProcess rec, String desc) {
         id = 0;
         kitchenProcess = rec;
         description = desc;
@@ -39,7 +39,7 @@ public class Task {
         portions = 0;
     }
 
-    public Task(Task mi) {
+    public KitchenTask(KitchenTask mi) {
         this.id = 0;
         this.description = mi.description;
         this.kitchenProcess = mi.kitchenProcess;
@@ -48,7 +48,7 @@ public class Task {
 
     // STATIC METHODS FOR PERSISTENCE
 
-    public static void saveAllNewTasks(int id, ArrayList<Task> taskList) {
+    public static void saveAllNewTasks(int id, ArrayList<KitchenTask> taskList) {
         String secInsert = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
 
         PersistenceManager.executeBatchUpdate(secInsert, taskList.size(), new BatchUpdateHandler() {
@@ -72,7 +72,7 @@ public class Task {
 
     }
 
-    public static void saveNewTask(int id, Task task, int taskPosition) {
+    public static void saveNewTask(int id, KitchenTask task, int taskPosition) {
         String query = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         PersistenceManager.executeUpdate(query,
@@ -89,9 +89,9 @@ public class Task {
 
     }
 
-    public static ArrayList<Task> loadAllTasksBySumSheetId(int id) {
+    public static ArrayList<KitchenTask> loadAllTasksBySumSheetId(int id) {
         String query = "SELECT * FROM Tasks WHERE sumsheet_id = ? ORDER BY position";
-        ArrayList<Task> taskArrayList = new ArrayList<>();
+        ArrayList<KitchenTask> taskArrayList = new ArrayList<>();
         ArrayList<Integer> recipeIds = new ArrayList<>();
         ArrayList<Boolean> types = new ArrayList<>();
 
@@ -99,7 +99,7 @@ public class Task {
             @Override
             public void handle(ResultSet rs) throws SQLException {
 
-                Task t = new Task();
+                KitchenTask t = new KitchenTask();
                 t.id = rs.getInt("id");
 
                 t.description = rs.getString("description");
@@ -113,7 +113,7 @@ public class Task {
         }, id); // Pass id as parameter
 
         for (int i = 0; i < recipeIds.size(); i++) {
-            Task t = taskArrayList.get(i);
+            KitchenTask t = taskArrayList.get(i);
             if (types.get(i)) {
                 t.kitchenProcess = Recipe.loadRecipe(recipeIds.get(i));
             } else {
@@ -125,9 +125,9 @@ public class Task {
         return taskArrayList;
     }
 
-    public static Task loadTaskById(int id) {
+    public static KitchenTask loadTaskById(int id) {
         String query = "SELECT * FROM Tasks WHERE id = ?";
-        Task[] taskHolder = new Task[1]; // Use array to allow modification in lambda
+        KitchenTask[] taskHolder = new KitchenTask[1]; // Use array to allow modification in lambda
         ArrayList<Integer> ids = new ArrayList<>(1);
         ArrayList<Boolean> types = new ArrayList<>(1);
 
@@ -137,7 +137,7 @@ public class Task {
                 if (taskHolder[0] != null)
                     return; // Only handle the first result
 
-                Task t = new Task();
+                KitchenTask t = new KitchenTask();
                 t.id = rs.getInt("id");
 
                 t.description = rs.getString("description");
@@ -156,7 +156,7 @@ public class Task {
             return null; // No task found with the given ID
         }
 
-        Task t = taskHolder[0];
+        KitchenTask t = taskHolder[0];
         if (types.get(0)) {
             t.kitchenProcess = Recipe.loadRecipe(ids.get(0));
         } else {
@@ -166,7 +166,7 @@ public class Task {
         return t;
     }
 
-    public static void updateTaskChanged(Task task) {
+    public static void updateTaskChanged(KitchenTask task) {
         String query = "UPDATE Tasks SET description = ?, quantity = ?, portions = ?, ready = ? WHERE id = ?";
 
         PersistenceManager.executeUpdate(query,

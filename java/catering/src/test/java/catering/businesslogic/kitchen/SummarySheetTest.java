@@ -103,7 +103,7 @@ public class SummarySheetTest {
             assertTrue(sheet.getTaskList().size() > 0, "Task list should contain tasks");
 
             // Get the first task
-            Task taskToAssign = sheet.getTaskList().get(0);
+            KitchenTask taskToAssign = sheet.getTaskList().get(0);
             assertNotNull(taskToAssign, "Task to assign should not be null");
 
             // Create a shift
