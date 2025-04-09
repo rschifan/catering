@@ -4,17 +4,23 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import catering.util.LogManager;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 
 public class PersistenceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(PersistenceManager.class);
-    private static final String DB_PATH = "database/catering.db";
-    private static final String SCRIPT_PATH = "database/catering_init_sqlite.sql";
+    private static final String DB_PATH = "database\\catering.db";
+    private static final String SCRIPT_PATH = "database\\catering_init_sqlite.sql";
     private static final String URL = "jdbc:sqlite:" + DB_PATH;
 
     private static int lastId;
@@ -55,6 +61,7 @@ public class PersistenceManager {
      * @param scriptFilePath path to the SQL script file
      * @return true if initialization was successful, false otherwise
      */
+
     public static boolean initializeDatabase(String scriptFilePath) {
         File scriptFile = new File(scriptFilePath);
         if (!scriptFile.exists()) {
@@ -63,38 +70,31 @@ public class PersistenceManager {
         }
 
         try {
-            // Execute the SQLite script using the sqlite3 command-line tool
-            ProcessBuilder pb = new ProcessBuilder(
-                    "sqlite3",
-                    DB_PATH,
-                    ".read " + scriptFile.getAbsolutePath());
+            // Read the SQL file content
+            String sqlScript = new String(Files.readAllBytes(scriptFile.toPath()), StandardCharsets.UTF_8);
 
-            // Redirect error stream to output stream
-            pb.redirectErrorStream(true);
+            // Split the script into individual statements using semicolon as delimiter
+            String[] statements = sqlScript.split(";");
 
-            // Start the process
-            Process process = pb.start();
+            // Execute each statement
+            try (Connection conn = DriverManager.getConnection(URL);
+                 Statement stmt = conn.createStatement()) {
 
-            // Wait for the process to complete
-            int exitCode = process.waitFor();
+                for (String statement : statements) {
+                    String trimmedStmt = statement.trim();
+                    if (!trimmedStmt.isEmpty()) {
+                        stmt.executeUpdate(trimmedStmt);
+                    }
+                }
 
-            if (exitCode == 0) {
                 LOGGER.info("Database initialized successfully from " + scriptFilePath);
                 return true;
-            } else {
-                // Read the error output
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    StringBuilder output = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        output.append(line).append("\n");
-                    }
-                    LOGGER.severe("Error initializing database. SQLite output: " + output.toString());
-                }
-                return false;
             }
-        } catch (IOException | InterruptedException e) {
-            LOGGER.log(Level.SEVERE, "Error executing SQLite script: " + scriptFilePath, e);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error reading SQL file: " + scriptFilePath, e);
+            return false;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error executing SQL from file: " + scriptFilePath, e);
             return false;
         }
     }
