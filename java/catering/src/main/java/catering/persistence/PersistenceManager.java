@@ -14,8 +14,6 @@ import catering.util.LogManager;
 public class PersistenceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(PersistenceManager.class);
-    //private static final String DB_PATH = java.nio.file.Paths.get("database", "catering.db").toString();
-    //private static final String SCRIPT_PATH = java.nio.file.Paths.get("database", "catering_init_sqlite.sql").toString();
     private static final String DB_PATH = new File("database", "catering.db").getAbsolutePath();
     private static final String SCRIPT_PATH = new File("database", "catering_init_sqlite.sql").getAbsolutePath();
     private static final String URL = "jdbc:sqlite:" + DB_PATH;
