@@ -2,21 +2,14 @@ package catering.businesslogic.recipe;
 
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
 /**
  * Preparation represents an intermediate food preparation step.
- * It implements KitchenProcess and has attributes specific to intermediate
- * steps.
  */
-public class Preparation implements KitchenProcess {
-
-    private int id;
-    private String name;
-    private String description;
+public class Preparation extends AbstractKitchenProcess {
 
     /**
      * Default constructor for loading from DB
@@ -26,107 +19,32 @@ public class Preparation implements KitchenProcess {
 
     /**
      * Creates a new preparation with the given name
-     * 
+     *
      * @param name The preparation name
      */
     public Preparation(String name) {
-        id = 0;
-        this.name = name;
-        this.description = "";
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the name of this preparation
-     * 
-     * @param name The name to set
-     */
-    public void setName(String name) {
+        this.id = 0;
         this.name = name;
     }
 
     @Override
-    public int getId() {
-        return id;
+    public void add(KitchenProcess p) {
+        throw new UnsupportedOperationException("Cannot add child to a Preparation");
     }
 
     @Override
-    public void setId(int id) {
-        this.id = id;
+    public void remove(KitchenProcess p) {
+        throw new UnsupportedOperationException("Cannot remove child from a Preparation");
     }
 
     @Override
-    public boolean isRecipe() {
-        return false; // This is not a recipe
-    }
-
-    @Override
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Sets the description for this preparation
-     * 
-     * @param description The description text
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-
-        Preparation other = (Preparation) obj;
-
-        // If both preparations have valid IDs, compare by ID
-        if (this.id > 0 && other.id > 0) {
-            return this.id == other.id;
-        }
-
-        // Otherwise, compare by name and description
-        boolean nameMatch = (this.name == null && other.name == null) ||
-                (this.name != null && this.name.equals(other.name));
-
-        boolean descMatch = (this.description == null && other.description == null) ||
-                (this.description != null && this.description.equals(other.description));
-
-        return nameMatch && descMatch;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-
-        // Use ID if it's valid
-        if (id > 0) {
-            result = prime * result + id;
-        } else {
-            // Otherwise use name and description
-            result = prime * result + (name != null ? name.hashCode() : 0);
-            result = prime * result + (description != null ? description.hashCode() : 0);
-        }
-
-        return result;
+    public List<KitchenProcess> getChildren() {
+        return Collections.emptyList();
     }
 
     /**
      * Loads all preparations from the database
-     * 
+     *
      * @return List of all preparations
      */
     public static ArrayList<Preparation> loadAllPreparations() {
@@ -150,20 +68,12 @@ public class Preparation implements KitchenProcess {
             }
         });
 
-        // Sort preparations by name
-        Collections.sort(preparations, new Comparator<Preparation>() {
-            @Override
-            public int compare(Preparation o1, Preparation o2) {
-                return (o1.getName().compareTo(o2.getName()));
-            }
-        });
-
         return preparations;
     }
 
     /**
      * Gets all preparations from the database
-     * 
+     *
      * @return List of all preparations
      */
     public static ArrayList<Preparation> getAllPreparations() {
@@ -172,7 +82,7 @@ public class Preparation implements KitchenProcess {
 
     /**
      * Loads a preparation by its ID
-     * 
+     *
      * @param id The preparation ID
      * @return The loaded preparation or null if not found
      */
@@ -201,7 +111,7 @@ public class Preparation implements KitchenProcess {
 
     /**
      * Saves a new preparation to the database
-     * 
+     *
      * @return true if successful, false otherwise
      */
     public boolean save() {
@@ -217,7 +127,7 @@ public class Preparation implements KitchenProcess {
 
     /**
      * Updates an existing preparation in the database
-     * 
+     *
      * @return true if successful, false otherwise
      */
     public boolean update() {
@@ -232,7 +142,7 @@ public class Preparation implements KitchenProcess {
 
     /**
      * Gets recipes that use this preparation
-     * 
+     *
      * @return List of recipes using this preparation
      */
     public List<Recipe> getUsedInRecipes() {
