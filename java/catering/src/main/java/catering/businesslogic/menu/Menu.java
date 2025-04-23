@@ -31,65 +31,10 @@ public class Menu {
             FEATURE_NEEDS_KITCHEN
     };
 
-    private int id;
-    private String title;
-    private boolean published;
-    private boolean inUse;
-    private Map<String, Boolean> features;
-    private ArrayList<MenuItem> freeItems;
-    private ArrayList<Section> sections;
-    private User owner;
-
-    // ===== CONSTRUCTORS =====
-
-    public Menu(User owner, String title, String[] menuFeatures) {
-        this.id = 0;
-        this.title = title;
-        this.owner = owner;
-        this.published = false;
-        this.inUse = false;
-        this.features = new HashMap<>();
-        this.sections = new ArrayList<>();
-        this.freeItems = new ArrayList<>();
-
-        for (String feature : menuFeatures) {
-            this.features.put(feature, false);
-        }
-    }
-
-    public Menu(User owner, String title) {
-        this(owner, title, DEFAULT_FEATURES);
-    }
-
-    private Menu() {
-        this(null, null, DEFAULT_FEATURES);
-    }
-
-    public Menu(User owner, Menu toCopy) {
-        this(owner, toCopy.title, DEFAULT_FEATURES);
-
-        // Copy features
-        for (String feat : toCopy.features.keySet()) {
-            this.features.put(feat, toCopy.features.get(feat));
-        }
-
-        // Copy sections
-        this.sections.clear();
-        for (Section original : toCopy.sections) {
-            this.sections.add(new Section(original));
-        }
-
-        // Copy free items
-        this.freeItems.clear();
-        for (MenuItem original : toCopy.freeItems) {
-            this.freeItems.add(new MenuItem(original));
-        }
-    }
-
-    // ===== DATABASE OPERATIONS =====
-
     public static void create(Menu m) {
+
         String query = "INSERT INTO Menus (title, owner_id, published) VALUES (?, ?, ?);";
+
         int[] result = PersistenceManager.executeBatchUpdate(query, 1, new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
@@ -162,16 +107,12 @@ public class Menu {
      * Delete a menu from the database
      */
     public static void delete(Menu m) {
-        // Delete in a specific order to maintain foreign key constraints
         PersistenceManager.executeUpdate("DELETE FROM MenuItems WHERE menu_id = ?", m.id);
         PersistenceManager.executeUpdate("DELETE FROM MenuSections WHERE menu_id = ?", m.id);
         PersistenceManager.executeUpdate("DELETE FROM MenuFeatures WHERE menu_id = ?", m.getId());
         PersistenceManager.executeUpdate("DELETE FROM Menus WHERE id = ?", m.getId());
     }
 
-    /**
-     * Save the title of a menu
-     */
     public static void saveTitle(Menu m) {
         PersistenceManager.executeUpdate("UPDATE Menus SET title = ? WHERE id = ?",
                 m.getTitle(), m.getId());
@@ -234,8 +175,6 @@ public class Menu {
         });
     }
 
-    // ===== HELPER DATABASE METHODS =====
-
     /**
      * Save features to the database
      */
@@ -280,13 +219,43 @@ public class Menu {
         }, m.id);
     }
 
-    // ===== SECTION MANAGEMENT =====
+    private int id;
 
-    public void addSection(Section sec) {
-        if (sec == null) {
-            throw new IllegalArgumentException("Section cannot be null");
+    private String title;
+
+    private boolean published;
+
+    private boolean inUse;
+
+    private HashMap<String, Boolean> features;
+
+    private ArrayList<MenuItem> freeItems;
+
+    private ArrayList<Section> sections;
+
+    private User owner;
+
+    public Menu(User owner, String title, String[] menuFeatures) {
+        this.id = 0;
+        this.title = title;
+        this.owner = owner;
+        this.published = false;
+        this.inUse = false;
+        this.features = new HashMap<String, Boolean>();
+        this.sections = new ArrayList<Section>();
+        this.freeItems = new ArrayList<MenuItem>();
+
+        for (String feature : menuFeatures) {
+            this.features.put(feature, false);
         }
-        this.sections.add(sec);
+    }
+
+    public Menu(User owner, String title) {
+        this(owner, title, DEFAULT_FEATURES);
+    }
+
+    private Menu() {
+        this(null, null);
     }
 
     public Section addSection(String name) {
@@ -320,21 +289,16 @@ public class Menu {
         return null;
     }
 
-    public Section getSection(Section sec) {
-        if (sec == null) {
-            return null;
-        }
-        // Use ID-based lookup if section has a valid ID
-        if (sec.getId() > 0) {
-            return getSectionById(sec.getId());
-        }
-        // Fall back to equality comparison
-        for (Section s : sections) {
-            if (s.equals(sec)) {
-                return s;
+    public Section getSection(MenuItem mi) {
+        for (Section sec : sections) {
+            if (sec.getItemPosition(mi) >= 0) {
+                return sec;
             }
         }
-        return null;
+        if (freeItems.contains(mi)) {
+            return null;
+        }
+        throw new IllegalArgumentException("MenuItem not found in this menu");
     }
 
     public boolean hasSection(Section sec) {
@@ -373,18 +337,6 @@ public class Menu {
             this.freeItems.add(mi);
         }
         return mi;
-    }
-
-    public MenuItem addItem(Recipe recipe, Section sec) {
-        return addItem(recipe, sec, "");
-    }
-
-    public MenuItem addItem(Recipe recipe) {
-        return addItem(recipe, null, "");
-    }
-
-    public MenuItem addItem(Recipe recipe, String desc) {
-        return addItem(recipe, null, desc);
     }
 
     public ArrayList<MenuItem> getFreeItems() {
@@ -443,18 +395,6 @@ public class Menu {
         this.freeItems.addAll(updatedList);
     }
 
-    public Section getSection(MenuItem mi) {
-        for (Section sec : sections) {
-            if (sec.getItemPosition(mi) >= 0) {
-                return sec;
-            }
-        }
-        if (freeItems.contains(mi)) {
-            return null;
-        }
-        throw new IllegalArgumentException("MenuItem not found in this menu");
-    }
-
     public ArrayList<MenuItem> getItems() {
         ArrayList<MenuItem> allItems = new ArrayList<>();
         allItems.addAll(this.freeItems);
@@ -466,17 +406,8 @@ public class Menu {
         return allItems;
     }
 
-    private MenuItem findItemById(int id) {
-        for (MenuItem mi : freeItems) {
-            if (mi.getId() == id) {
-                return mi;
-            }
-        }
-        return null;
-    }
-
-    public ArrayList<KitchenProcess> getNeededKitchenProcesses() {
-        ArrayList<KitchenProcess> allKitchenProcesses = new ArrayList<>();        
+    public ArrayList<KitchenProcess> getKitchenProcesses() {
+        ArrayList<KitchenProcess> allKitchenProcesses = new ArrayList<>();
 
         for (MenuItem item : this.getItems()) {
             Recipe recipe = item.getRecipe();
@@ -487,9 +418,6 @@ public class Menu {
         return allKitchenProcesses;
     }
 
-
-    // ===== FEATURE MANAGEMENT =====
-
     public void initializeDefaultFeatures() {
         for (String feature : DEFAULT_FEATURES) {
             if (!features.containsKey(feature)) {
@@ -497,6 +425,8 @@ public class Menu {
             }
         }
     }
+
+    // ===== FEATURE MANAGEMENT =====
 
     public Map<String, Boolean> getFeatures() {
         return this.features;
@@ -572,11 +502,11 @@ public class Menu {
         return needsKitchen() || needsCook() || hasWarmDishes();
     }
 
-    // ===== BASIC GETTERS AND SETTERS =====
-
     public int getId() {
         return id;
     }
+
+    // ===== BASIC GETTERS AND SETTERS =====
 
     public User getOwner() {
         return this.owner;
@@ -606,15 +536,30 @@ public class Menu {
         return this.inUse;
     }
 
-    public void setInUse(boolean inUse) {
-        this.inUse = inUse;
-    }
-
     public boolean isOwner(User u) {
         return u.getId() == this.owner.getId();
     }
 
     // ===== UTILITY METHODS =====
+
+    public Menu deepCopy() {
+
+        Menu copy = new Menu(this.owner, this.title, DEFAULT_FEATURES);
+
+        copy.published = this.published;
+        copy.inUse = this.inUse;
+
+        for (Map.Entry<String, Boolean> entry : this.features.entrySet())
+            copy.features.put(entry.getKey(), entry.getValue());
+
+        for (Section sec : this.sections)
+            copy.sections.add(sec.deepCopy());
+
+        for (MenuItem mi : this.freeItems)
+            copy.freeItems.add(mi.deepCopy());
+
+        return copy;
+    }
 
     @Override
     public String toString() {
@@ -704,6 +649,15 @@ public class Menu {
         result = 31 * result + (freeItems != null ? freeItems.hashCode() : 0);
         result = 31 * result + (sections != null ? sections.hashCode() : 0);
         return result;
+    }
+
+    private MenuItem findItemById(int id) {
+        for (MenuItem mi : freeItems) {
+            if (mi.getId() == id) {
+                return mi;
+            }
+        }
+        return null;
     }
 
 }

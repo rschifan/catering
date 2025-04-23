@@ -203,6 +203,17 @@ public class Section {
         return null;
     }
 
+    public Section deepCopy() {
+        Section copy = new Section(this.name);
+
+        copy.id = this.id;
+
+        for (MenuItem mi : this.getItems()) {
+            copy.addItem(mi.deepCopy());
+        }
+        return copy;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

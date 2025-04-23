@@ -124,6 +124,15 @@ public class MenuItem {
         this.recipe = itemRecipe;
     }
 
+    public MenuItem deepCopy() {
+
+        MenuItem copy = new MenuItem(this.recipe, this.description);
+
+        copy.id = this.id;
+
+        return copy;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

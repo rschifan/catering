@@ -7,8 +7,6 @@ import java.util.ArrayList;
 
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.event.Service;
-import catering.businesslogic.menu.MenuItem;
-import catering.businesslogic.recipe.Preparation;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
@@ -17,79 +15,13 @@ import catering.persistence.ResultHandler;
 
 public class SummarySheet {
 
-    private int id;
-    private Service serviceInfo;
-    private User owner;
-    private ArrayList<KitchenTask> taskList;
-    private ArrayList<Assignment> assignmentList;
-
-    private SummarySheet() {
-    }
-
-    public SummarySheet(Service service, User user) {
-
-        this.serviceInfo = service;
-        this.owner = user;
-        taskList = new ArrayList<>();
-        assignmentList = new ArrayList<>();
-
-        ArrayList<MenuItem> menuItems = service.getMenuItems();
-
-        for (MenuItem mi : menuItems) {
-            // Add the main recipe task
-            KitchenTask mainTask = new KitchenTask(mi.getRecipe(), mi.getDescription());
-            taskList.add(mainTask);
-
-            // Get all preparations from the recipe and add them as separate tasks
-            if (mi.getRecipe() != null) {
-                ArrayList<Preparation> preparations = mi.getRecipe().getPreparations();
-                if (preparations != null) {
-                    for (Preparation prep : preparations) {
-                        // Create a task for each preparation with appropriate details
-                        KitchenTask prepTask = new KitchenTask(prep, prep.getName());
-                        taskList.add(prepTask);
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * Loads all summary sheets from the database
      * 
      * @return List of all summary sheets
      */
     public static ArrayList<SummarySheet> loadAllSumSheets() {
-        // Using a parameterized query instead of concatenation
-        String query = "SELECT * FROM SummarySheets";
-        ArrayList<SummarySheet> summarySheets = new ArrayList<>();
-        ArrayList<Integer> serviceIds = new ArrayList<>();
-        ArrayList<Integer> ownerIds = new ArrayList<>();
-
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                SummarySheet s = new SummarySheet();
-                s.id = rs.getInt("id");
-
-                summarySheets.add(s);
-                serviceIds.add(rs.getInt("service_id"));
-                ownerIds.add(rs.getInt("owner_id"));
-            }
-        });
-
-        for (int i = 0; i < serviceIds.size(); i++) {
-            summarySheets.get(i).serviceInfo = Service.loadById(serviceIds.get(i));
-        }
-
-        for (int i = 0; i < ownerIds.size(); i++) {
-            SummarySheet s = summarySheets.get(i);
-            s.owner = User.load(ownerIds.get(i));
-            s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
-            s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
-        }
-
-        return summarySheets;
+        return loadSummarySheets("SELECT * FROM SummarySheets");
     }
 
     /**
@@ -99,33 +31,8 @@ public class SummarySheet {
      * @return The loaded summary sheet, or null if not found
      */
     public static SummarySheet loadSummarySheetById(int id) {
-        SummarySheet[] sheetHolder = new SummarySheet[1]; // Use array to allow modification in lambda
-        String query = "SELECT * FROM SummarySheets WHERE id = ?";
-
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                if (sheetHolder[0] != null)
-                    return; // Only handle the first result
-
-                SummarySheet s = new SummarySheet();
-                s.id = rs.getInt("id");
-
-                int serviceId = rs.getInt("service_id");
-                s.serviceInfo = Service.loadById(serviceId);
-
-                int ownerId = rs.getInt("owner_id");
-                s.owner = User.load(ownerId);
-
-                // Load related data
-                s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
-                s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
-
-                sheetHolder[0] = s;
-            }
-        }, id); // Pass id as parameter
-
-        return sheetHolder[0];
+        ArrayList<SummarySheet> results = loadSummarySheets("SELECT * FROM SummarySheets WHERE id = ?", id);
+        return results.isEmpty() ? null : results.get(0);
     }
 
     /**
@@ -135,30 +42,7 @@ public class SummarySheet {
      * @return List of summary sheets for the service
      */
     public static ArrayList<SummarySheet> loadSummarySheetsByServiceId(int serviceId) {
-        ArrayList<SummarySheet> summarySheets = new ArrayList<>();
-        String query = "SELECT * FROM SummarySheets WHERE service_id = ?";
-
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                SummarySheet s = new SummarySheet();
-                s.id = rs.getInt("id");
-
-                int svcId = rs.getInt("service_id");
-                s.serviceInfo = Service.loadById(svcId);
-
-                int ownerId = rs.getInt("owner_id");
-                s.owner = User.load(ownerId);
-
-                // Load related data
-                s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
-                s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
-
-                summarySheets.add(s);
-            }
-        }, serviceId); // Pass serviceId as parameter
-
-        return summarySheets;
+        return loadSummarySheets("SELECT * FROM SummarySheets WHERE service_id = ?", serviceId);
     }
 
     public static void updateTaskList(SummarySheet ss) {
@@ -177,16 +61,12 @@ public class SummarySheet {
         });
     }
 
-    public int getTaskPosition(KitchenTask t) {
-        return taskList.indexOf(t);
-    }
-
     public static void saveNewSumSheet(SummarySheet s) {
         String sumSheetInsert = "INSERT INTO SummarySheets (service_id, owner_id) VALUES (?, ?);";
         int[] result = PersistenceManager.executeBatchUpdate(sumSheetInsert, 1, new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setInt(1, s.serviceInfo.getId());
+                ps.setInt(1, s.service.getId());
                 ps.setInt(2, s.owner.getId());
             }
 
@@ -208,6 +88,70 @@ public class SummarySheet {
                 KitchenTask.saveAllNewTasks(s.id, s.taskList);
             }
         }
+    }
+
+    /**
+     * Helper method to handle result set and create SummarySheet objects
+     * 
+     * @param query  The SQL query to execute
+     * @param params Query parameters (optional)
+     * @return List of SummarySheet objects
+     */
+    private static ArrayList<SummarySheet> loadSummarySheets(String query, Object... params) {
+        ArrayList<SummarySheet> summarySheets = new ArrayList<>();
+        ArrayList<Integer> serviceIds = new ArrayList<>();
+        ArrayList<Integer> ownerIds = new ArrayList<>();
+
+        PersistenceManager.executeQuery(query, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                SummarySheet s = new SummarySheet();
+                s.id = rs.getInt("id");
+
+                summarySheets.add(s);
+                serviceIds.add(rs.getInt("service_id"));
+                ownerIds.add(rs.getInt("owner_id"));
+            }
+        }, params);
+
+        // Load services, owners, tasks, and assignments for each sheet
+        for (int i = 0; i < summarySheets.size(); i++) {
+            SummarySheet s = summarySheets.get(i);
+            s.service = Service.loadById(serviceIds.get(i));
+            s.owner = User.load(ownerIds.get(i));
+            s.taskList = KitchenTask.loadAllTasksBySumSheetId(s.id);
+            s.assignmentList = Assignment.loadAllAssignmentsBySumSheetId(s.id);
+        }
+
+        return summarySheets;
+    }
+
+    private int id;
+
+    private Service service;
+
+    private User owner;
+
+    private ArrayList<KitchenTask> taskList;
+
+    private ArrayList<Assignment> assignmentList;
+
+    public SummarySheet(Service service, User user) {
+
+        this.service = service;
+        this.owner = user;
+        taskList = new ArrayList<KitchenTask>();
+        assignmentList = new ArrayList<>();
+
+        service.getMenu().getKitchenProcesses()
+                .forEach(kitchenProcess -> taskList.add(new KitchenTask(kitchenProcess, kitchenProcess.getName())));
+    }
+
+    private SummarySheet() {
+    }
+
+    public int getTaskPosition(KitchenTask t) {
+        return taskList.indexOf(t);
     }
 
     public KitchenTask addTask(KitchenTask t) {
@@ -290,71 +234,45 @@ public class SummarySheet {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        // Basic summary sheet info
-        sb.append("SummarySheet [ID: ").append(id);
-        sb.append(", Owner: ").append(owner != null ? owner.getUserName() : "none");
+        StringBuilder sb = new StringBuilder("\n\nSummarySheet [ID: ")
+                .append(id)
+                .append(", Owner: ").append(owner != null ? owner.getUserName() : "none");
 
         // Service info
-        if (serviceInfo != null) {
-            sb.append(", Service: ").append(serviceInfo.getName());
-            sb.append(" (").append(serviceInfo.getId()).append(")");
+        if (service != null) {
+            sb.append(", Service: ").append(service.getName());
         } else {
             sb.append(", No service");
         }
 
-        // Task summary
-        sb.append(", Tasks: ").append(taskList != null ? taskList.size() : 0);
+        // Collection counts
+        sb.append(", Tasks: ").append(taskList != null ? taskList.size() : 0)
+                .append(", Assignments: ").append(assignmentList != null ? assignmentList.size() : 0);
 
-        // Assignments summary
-        sb.append(", Assignments: ").append(assignmentList != null ? assignmentList.size() : 0);
-
-        // Task details
-        if (taskList != null && !taskList.isEmpty()) {
-            sb.append("]\nTasks:");
-            int count = 1;
-            for (KitchenTask task : taskList) {
-                sb.append("\n  ").append(count++).append(". ");
-                sb.append(task.isReady() ? "[✓] " : "[ ] ");
-                sb.append(task.getDescription());
-
-                // Add quantity and portions if set
-                if (task.getQuantity() > 0 || task.getPortions() > 0) {
-                    sb.append(" (");
-                    if (task.getQuantity() > 0)
-                        sb.append("Qty: ").append(task.getQuantity());
-                    if (task.getQuantity() > 0 && task.getPortions() > 0)
-                        sb.append(", ");
-                    if (task.getPortions() > 0)
-                        sb.append("Portions: ").append(task.getPortions());
-                    sb.append(")");
-                }
-            }
+        // Close header section or prepare for details
+        if ((taskList == null || taskList.isEmpty()) &&
+                (assignmentList == null || assignmentList.isEmpty())) {
+            sb.append("]");
         } else {
             sb.append("]");
-        }
 
-        // Assignment details if present
-        if (assignmentList != null && !assignmentList.isEmpty()) {
-            sb.append("\nAssignments:");
-            int count = 1;
-            for (Assignment ass : assignmentList) {
-                sb.append("\n  ").append(count++).append(". ");
+            // Task details - using Task.toString()
+            if (taskList != null && !taskList.isEmpty()) {
+                sb.append("\n\nTasks:");
+                int count = 1;
+                for (KitchenTask task : taskList) {
+                    sb.append("\n  ").append(count++).append(". ")
+                            .append(task.toString());
+                }
+            }
 
-                // Task info
-                KitchenTask task = ass.getTask();
-                sb.append("Task: ").append(task != null ? task.getDescription() : "none");
-
-                // Cook info
-                User cook = ass.getCook();
-                sb.append(", Cook: ").append(cook != null ? cook.getUserName() : "unassigned");
-
-                // Shift info
-                Shift shift = ass.getShift();
-                if (shift != null) {
-                    sb.append(", Shift: ").append(shift.getDate());
-                    sb.append(" (").append(shift.getStartTime()).append("-").append(shift.getEndTime()).append(")");
+            // Assignment details - using Assignment.toString()
+            if (assignmentList != null && !assignmentList.isEmpty()) {
+                sb.append("\n\nAssignments:");
+                int count = 1;
+                for (Assignment ass : assignmentList) {
+                    sb.append("\n  ").append(count++).append(". ")
+                            .append(ass.toString());
                 }
             }
         }

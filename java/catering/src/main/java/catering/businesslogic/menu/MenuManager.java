@@ -29,7 +29,7 @@ public class MenuManager {
 
         Menu m = new Menu(user, title);
         this.setCurrentMenu(m);
-        this.notifyMenuAdded(m);
+        this.notifyMenuCreated(m);
 
         return m;
     }
@@ -113,16 +113,19 @@ public class MenuManager {
         this.currentMenu = m;
     }
 
-    public Menu copyMenu(Menu toCopy) throws UseCaseLogicException {
+    public Menu chooseMenuForCopy(Menu toCopy) throws UseCaseLogicException {
+
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
 
         if (!user.isChef()) {
             throw new UseCaseLogicException();
         }
 
-        Menu m = new Menu(user, toCopy);
+        Menu m = toCopy.deepCopy();
+        m.setOwner(user);
+
         this.setCurrentMenu(m);
-        this.notifyMenuAdded(m);
+        this.notifyMenuCreated(m);
 
         return m;
     }
@@ -322,7 +325,7 @@ public class MenuManager {
         }
     }
 
-    private void notifyMenuAdded(Menu m) {
+    private void notifyMenuCreated(Menu m) {
         for (MenuEventReceiver er : this.eventReceivers) {
             er.updateMenuCreated(m);
         }

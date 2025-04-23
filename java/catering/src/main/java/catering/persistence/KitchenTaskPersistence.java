@@ -41,4 +41,5 @@ public class KitchenTaskPersistence implements KitchenTaskEventReceiver {
     public void updateTaskChanged(KitchenTask task) {
         KitchenTask.updateTaskChanged(task);
     }
+
 }

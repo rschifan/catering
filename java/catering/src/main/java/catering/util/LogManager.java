@@ -12,11 +12,11 @@ import java.util.logging.Logger;
  * Utility class to provide consistent logging across the application
  */
 public class LogManager {
-
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private static LogManager instance = null;
 
-    static {
-        // Configure the root logger
+    private LogManager() {
+        // Private constructor
         Logger rootLogger = Logger.getLogger("");
 
         // Remove existing handlers
@@ -34,13 +34,15 @@ public class LogManager {
         rootLogger.setLevel(Level.INFO);
     }
 
-    /**
-     * Gets a logger instance for the specified class
-     * 
-     * @param clazz The class to get a logger for
-     * @return A configured Logger instance
-     */
+    public static synchronized LogManager getInstance() {
+        if (instance == null) {
+            instance = new LogManager();
+        }
+        return instance;
+    }
+
     public static Logger getLogger(Class<?> clazz) {
+        getInstance(); // Ensure logger is configured
         return Logger.getLogger(clazz.getName());
     }
 

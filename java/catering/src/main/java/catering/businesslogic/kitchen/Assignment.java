@@ -178,4 +178,19 @@ public class Assignment {
         a.id = PersistenceManager.getLastId();
 
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Task: ").append(getTask() != null ? getTask().getDescription() : "none");
+        sb.append(", Cook: ").append(getCook() != null ? getCook().getUserName() : "unassigned");
+
+        Shift shift = getShift();
+        if (shift != null) {
+            sb.append(", Shift: ").append(shift.getDate())
+                    .append(" (").append(shift.getStartTime())
+                    .append("-").append(shift.getEndTime()).append(")");
+        }
+        return sb.toString();
+    }
 }

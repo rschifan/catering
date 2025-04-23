@@ -1,5 +1,7 @@
 package catering.businesslogic.kitchen;
 
+import java.util.ArrayList;
+
 import catering.businesslogic.CatERing;
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.event.Event;
@@ -7,8 +9,6 @@ import catering.businesslogic.event.Service;
 import catering.businesslogic.recipe.KitchenProcess;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
-
-import java.util.ArrayList;
 
 public class KitchenTaskManager {
 
@@ -45,14 +45,7 @@ public class KitchenTaskManager {
         if (service.getMenu() == null)
             throw new UseCaseLogicException("Service lacks menu");
 
-        ArrayList<KitchenProcess> allKitchenProcesses = service.getMenu().getNeededKitchenProcesses();
-
         SummarySheet newSummarySheet = new SummarySheet(service, user);
-
-        for (KitchenProcess process : allKitchenProcesses) {
-            KitchenTask task = new KitchenTask(process);
-            newSummarySheet.addTask(task);
-        }
 
         this.setCurrentSumSheet(newSummarySheet);
         this.notifySheetGenerated(newSummarySheet);
@@ -161,10 +154,6 @@ public class KitchenTaskManager {
         return currentSumSheet;
     }
 
-    private void setCurrentSumSheet(SummarySheet summarySheet) {
-        currentSumSheet = summarySheet;
-    }
-
     public void setTaskReady(KitchenTask t) throws UseCaseLogicException {
         KitchenTask task = currentSumSheet.setTaskReady(t);
         notifyTaskChanged(task);
@@ -173,6 +162,10 @@ public class KitchenTaskManager {
     public void deleteAssignment(Assignment a) throws UseCaseLogicException {
         Assignment ass = currentSumSheet.deleteAssignment(a);
         notifyAssignmentDeleted(ass);
+    }
+
+    private void setCurrentSumSheet(SummarySheet summarySheet) {
+        currentSumSheet = summarySheet;
     }
 
     private void notifyTaskChanged(KitchenTask task) {

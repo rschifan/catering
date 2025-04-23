@@ -193,9 +193,23 @@ public class KitchenTask {
         return id;
     }
 
+    @Override
     public String toString() {
-        return kitchenProcess.getName() + " " + description + " " + " " +
-                " " + ready + " " + portions + " " + quantity;
+        StringBuilder sb = new StringBuilder();
+        sb.append(isReady() ? "[✓] " : "[ ] ")
+                .append(getDescription());
+
+        if (getQuantity() > 0 || getPortions() > 0) {
+            sb.append(" (");
+            if (getQuantity() > 0)
+                sb.append("Qty: ").append(getQuantity());
+            if (getQuantity() > 0 && getPortions() > 0)
+                sb.append(", ");
+            if (getPortions() > 0)
+                sb.append("Portions: ").append(getPortions());
+            sb.append(")");
+        }
+        return sb.toString();
     }
 
     public String getDescription() {
