@@ -412,7 +412,7 @@ public class Menu {
         for (MenuItem item : this.getItems()) {
             Recipe recipe = item.getRecipe();
             allKitchenProcesses.add(recipe);
-            allKitchenProcesses.addAll(recipe.getPreparations());
+            allKitchenProcesses.addAll(recipe.getChildren());
         }
 
         return allKitchenProcesses;
