@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 import catering.businesslogic.menu.Menu;
 import catering.businesslogic.menu.MenuItem;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 import catering.util.LogManager;
 
@@ -107,7 +107,7 @@ public class Service {
             return;
 
         String query = "UPDATE Services SET approved_menu_id = ? WHERE id = ?";
-        PersistenceManager.executeUpdate(query, this.menu.getId(), this.getId());
+        SQLitePersistenceManager.executeUpdate(query, this.menu.getId(), this.getId());
     }
 
     public void removeMenu() {
@@ -128,7 +128,7 @@ public class Service {
         // Convert date to timestamp for storage
         Long dateTimestamp = (this.getDate() != null) ? this.getDate().getTime() : null;
 
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 this.getEventId(),
                 this.getName(),
                 dateTimestamp,
@@ -137,7 +137,7 @@ public class Service {
                 this.getLocation());
 
         // Get the ID of the newly inserted service
-        this.setId(PersistenceManager.getLastId());
+        this.setId(SQLitePersistenceManager.getLastId());
     }
 
     public void updateService() {
@@ -145,7 +145,7 @@ public class Service {
 
         Long dateTimestamp = (this.getDate() != null) ? this.getDate().getTime() : null;
 
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 this.getName(),
                 dateTimestamp,
                 this.getTimeStart(),
@@ -156,21 +156,21 @@ public class Service {
 
     public boolean deleteService() {
         String query = "DELETE FROM Services WHERE id = ?";
-        return PersistenceManager.executeUpdate(query, this.getId()) > 0;
+        return SQLitePersistenceManager.executeUpdate(query, this.getId()) > 0;
     }
 
     public void assignMenuToService(Menu menu) {
         this.setMenu(menu);
 
         String query = "UPDATE Services SET approved_menu_id = ? WHERE id = ?";
-        PersistenceManager.executeUpdate(query, menu.getId(), this.getId());
+        SQLitePersistenceManager.executeUpdate(query, menu.getId(), this.getId());
     }
 
     public void removeMenuFromService() {
         this.removeMenu();
 
         String query = "UPDATE Services SET approved_menu_id = 0 WHERE id = ?";
-        PersistenceManager.executeUpdate(query, this.getId());
+        SQLitePersistenceManager.executeUpdate(query, this.getId());
     }
 
     // Static methods for data loading
@@ -178,7 +178,7 @@ public class Service {
         ArrayList<Service> services = new ArrayList<>();
         String query = "SELECT * FROM Services WHERE event_id = ? ORDER BY service_date, time_start";
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Service s = new Service();
@@ -222,7 +222,7 @@ public class Service {
         final boolean[] serviceFound = new boolean[1];
         serviceFound[0] = false;
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 serviceFound[0] = true;
@@ -257,7 +257,8 @@ public class Service {
                     try {
                         s.menu = Menu.load(menuId);
                     } catch (Exception e) {
-                        LOGGER.warning("Failed to load menu (id: " + menuId + ") for service: " + s.name);
+                        LOGGER.warning("Failed to load menu (id: " + menuId + ") for service: " +
+                                s.name);
                     }
                 }
 
@@ -287,7 +288,7 @@ public class Service {
         if (this.id > 0 && other.id > 0) {
             return this.id == other.id;
         }
-        
+
         // Otherwise, compare by name and items
         boolean nameMatch = (this.name == null && other.name == null) ||
                 (this.name != null && this.name.equals(other.name));
@@ -298,34 +299,34 @@ public class Service {
 
         // If dates don't match, sections are not equal
         boolean dateMatch = (this.date == null && other.date == null) ||
-        (this.date != null && this.date.equals(other.date));
+                (this.date != null && this.date.equals(other.date));
 
         if (!dateMatch)
             return false;
 
         // If times don't match, sections are not equal
         boolean timeStartMatch = (this.timeStart == null && other.timeStart == null) ||
-        (this.timeStart != null && this.timeStart.equals(other.timeStart));
+                (this.timeStart != null && this.timeStart.equals(other.timeStart));
 
         if (!timeStartMatch)
             return false;
-        
+
         boolean timeEndMatch = (this.timeEnd == null && other.timeEnd == null) ||
-            (this.timeEnd != null && this.timeEnd.equals(other.timeEnd));
-    
+                (this.timeEnd != null && this.timeEnd.equals(other.timeEnd));
+
         if (!timeEndMatch)
-            return false;        
+            return false;
 
         // If locations don't match, sections are not equal
         boolean locationMatch = (this.location == null && other.location == null) ||
-        (this.location != null && this.location.equals(other.location));
+                (this.location != null && this.location.equals(other.location));
 
         if (!locationMatch)
             return false;
 
         // If locations don't match, sections are not equal
         boolean menuMatch = (this.menu == null && other.menu == null) ||
-        (this.menu != null && this.menu.equals(other.menu));
+                (this.menu != null && this.menu.equals(other.menu));
 
         if (!menuMatch)
             return false;

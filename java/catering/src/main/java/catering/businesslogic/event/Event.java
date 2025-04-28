@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import catering.businesslogic.user.User;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 import catering.util.DateUtils;
 import catering.util.LogManager;
@@ -119,10 +119,10 @@ public class Event {
         Long startTimestamp = (dateStart != null) ? dateStart.getTime() : null;
         Long endTimestamp = (dateEnd != null) ? dateEnd.getTime() : null;
 
-        PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId());
+        SQLitePersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId());
 
         // Get the ID of the newly inserted event
-        id = PersistenceManager.getLastId();
+        id = SQLitePersistenceManager.getLastId();
 
         LOGGER.info("Saved event: " + name + " (ID: " + id + ")");
     }
@@ -133,7 +133,7 @@ public class Event {
         Long startTimestamp = (dateStart != null) ? dateStart.getTime() : null;
         Long endTimestamp = (dateEnd != null) ? dateEnd.getTime() : null;
 
-        PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId(), id);
+        SQLitePersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId(), id);
 
         LOGGER.info("Updated event: " + name + " (ID: " + id + ")");
     }
@@ -147,7 +147,7 @@ public class Event {
 
         // Delete the event
         String query = "DELETE FROM Events WHERE id = ?";
-        boolean success = PersistenceManager.executeUpdate(query, id) > 0;
+        boolean success = SQLitePersistenceManager.executeUpdate(query, id) > 0;
 
         if (success) {
             LOGGER.info("Deleted event: " + name + " (ID: " + id + ")");
@@ -161,7 +161,7 @@ public class Event {
         ArrayList<Event> events = new ArrayList<>();
         String query = "SELECT * FROM Events ORDER BY date_start DESC";
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Event e = new Event();
@@ -196,7 +196,7 @@ public class Event {
         final Event[] eventHolder = new Event[1];
         final boolean[] eventFound = new boolean[1];
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 eventFound[0] = true;

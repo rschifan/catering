@@ -27,7 +27,7 @@ public class MenuManager {
             throw new UseCaseLogicException();
         }
 
-        Menu m = new Menu(user, title);
+        Menu m = Menu.create(user, title);
         this.setCurrentMenu(m);
         this.notifyMenuCreated(m);
 
@@ -146,38 +146,6 @@ public class MenuManager {
         this.notifySectionChangedName(s);
     }
 
-    public void moveSection(Section sec, int position) throws UseCaseLogicException {
-        if (currentMenu == null || currentMenu.getSectionPosition(sec) < 0)
-            throw new UseCaseLogicException();
-        if (position < 0 || position >= currentMenu.getSectionCount())
-            throw new IllegalArgumentException();
-        this.currentMenu.moveSection(sec, position);
-
-        this.notifySectionsRearranged();
-    }
-
-    public void moveMenuItem(MenuItem it, int position) throws UseCaseLogicException {
-        this.moveMenuItem(it, null, position);
-    }
-
-    public void moveMenuItem(MenuItem mi, Section sec, int position) throws UseCaseLogicException {
-        if (sec == null) {
-            if (currentMenu == null || currentMenu.getFreeItemPosition(mi) < 0)
-                throw new UseCaseLogicException();
-            if (position < 0 || position >= currentMenu.getFreeItemCount())
-                throw new IllegalArgumentException();
-            currentMenu.moveFreeItem(mi, position);
-            this.notifyFreeItemsRearranged();
-        } else {
-            if (currentMenu == null || currentMenu.getSectionPosition(sec) < 0 || sec.getItemPosition(mi) < 0)
-                throw new UseCaseLogicException();
-            if (position < 0 || position >= sec.getItemsCount())
-                throw new IllegalArgumentException();
-            sec.moveItem(mi, position);
-            this.notifySectionItemsRearranged(sec);
-        }
-    }
-
     public void assignItemToSection(MenuItem mi, Section sec) throws UseCaseLogicException {
 
         if (currentMenu == null)
@@ -256,24 +224,6 @@ public class MenuManager {
     private void notifyItemSectionChanged(MenuItem mi, Section s) {
         for (MenuEventReceiver er : this.eventReceivers) {
             er.updateMenuItemChanged(this.currentMenu, s, mi);
-        }
-    }
-
-    private void notifySectionItemsRearranged(Section sec) {
-        for (MenuEventReceiver er : this.eventReceivers) {
-            er.updateMenuItemsRearranged(this.currentMenu, sec);
-        }
-    }
-
-    private void notifyFreeItemsRearranged() {
-        for (MenuEventReceiver er : this.eventReceivers) {
-            er.updateFreeMenuItemsRearranged(this.currentMenu);
-        }
-    }
-
-    private void notifySectionsRearranged() {
-        for (MenuEventReceiver er : this.eventReceivers) {
-            er.updateSectionsRearranged(this.currentMenu);
         }
     }
 

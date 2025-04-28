@@ -10,7 +10,7 @@ import catering.businesslogic.event.Service;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 
 public class SummarySheet {
@@ -47,7 +47,7 @@ public class SummarySheet {
 
     public static void updateTaskList(SummarySheet ss) {
         String upd = "UPDATE Tasks SET position = ? WHERE id = ?";
-        PersistenceManager.executeBatchUpdate(upd, ss.taskList.size(), new BatchUpdateHandler() {
+        SQLitePersistenceManager.executeBatchUpdate(upd, ss.taskList.size(), new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
                 ps.setInt(1, batchCount);
@@ -63,7 +63,7 @@ public class SummarySheet {
 
     public static void saveNewSumSheet(SummarySheet s) {
         String sumSheetInsert = "INSERT INTO SummarySheets (service_id, owner_id) VALUES (?, ?);";
-        int[] result = PersistenceManager.executeBatchUpdate(sumSheetInsert, 1, new BatchUpdateHandler() {
+        int[] result = SQLitePersistenceManager.executeBatchUpdate(sumSheetInsert, 1, new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
                 ps.setInt(1, s.service.getId());
@@ -102,7 +102,7 @@ public class SummarySheet {
         ArrayList<Integer> serviceIds = new ArrayList<>();
         ArrayList<Integer> ownerIds = new ArrayList<>();
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 SummarySheet s = new SummarySheet();

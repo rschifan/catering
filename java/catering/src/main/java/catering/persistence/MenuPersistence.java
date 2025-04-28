@@ -9,12 +9,12 @@ public class MenuPersistence implements MenuEventReceiver {
 
     @Override
     public void updateMenuCreated(Menu m) {
-        Menu.create(m);
+        Menu.insert(m);
     }
 
     @Override
     public void updateSectionAdded(Menu m, Section sec) {
-        Section.create(m.getId(), sec, m.getSectionPosition(sec));
+        Section.insert(m.getId(), sec, m.getSectionPosition(sec));
     }
 
     @Override
@@ -22,7 +22,7 @@ public class MenuPersistence implements MenuEventReceiver {
         Section sec = m.getSection(mi);
         int sec_id = (sec == null ? 0 : sec.getId());
         int pos = (sec == null ? m.getFreeItemPosition(mi) : sec.getItemPosition(mi));
-        MenuItem.create(m.getId(), sec_id, mi, pos);
+        MenuItem.insert(m.getId(), sec_id, mi, pos);
     }
 
     @Override
@@ -47,29 +47,14 @@ public class MenuPersistence implements MenuEventReceiver {
 
     @Override
     public void updateSectionDeleted(Menu m, Section s, boolean itemsDeleted) {
-        Section.deleteSection(m.getId(), s);
+        Section.deleteSection(s);
         if (!itemsDeleted)
-            MenuItem.create(m.getId(), 0, s.getItems());
+            MenuItem.insert(m.getId(), 0, s.getItems());
     }
 
     @Override
     public void updateSectionChangedName(Menu m, Section s) {
         Section.saveSectionName(s);
-    }
-
-    @Override
-    public void updateSectionsRearranged(Menu m) {
-        Menu.saveSectionOrder(m);
-    }
-
-    @Override
-    public void updateFreeMenuItemsRearranged(Menu m) {
-        Menu.saveFreeItemOrder(m);
-    }
-
-    @Override
-    public void updateMenuItemsRearranged(Menu m, Section s) {
-        Section.saveItemOrder(s);
     }
 
     @Override
@@ -86,9 +71,6 @@ public class MenuPersistence implements MenuEventReceiver {
     @Override
     public void updateMenuItemDeleted(Menu m, Section sec, MenuItem mi) {
         MenuItem.removeItem(mi);
-        if (sec != null) {
-            Section.saveItemOrder(sec);
-        } else
-            Menu.saveFreeItemOrder(m);
     }
+
 }

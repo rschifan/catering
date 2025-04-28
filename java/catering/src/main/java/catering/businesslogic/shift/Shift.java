@@ -1,7 +1,7 @@
 package catering.businesslogic.shift;
 
 import catering.businesslogic.user.User;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 import catering.util.LogManager;
 
@@ -63,7 +63,7 @@ public class Shift {
 
         LOGGER.info("Loading all shifts from database");
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Shift s = new Shift();
@@ -118,7 +118,7 @@ public class Shift {
 
         LOGGER.fine("Loading shift with ID " + id);
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Shift s = new Shift();
@@ -162,7 +162,7 @@ public class Shift {
         Map<Integer, User> bookings = new HashMap<>();
         String query = "SELECT user_id FROM ShiftBookings WHERE shift_id = ?";
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 int userId = rs.getInt("user_id");
@@ -186,12 +186,12 @@ public class Shift {
 
         String query = "INSERT INTO Shifts (date, start_time, end_time) VALUES (?, ?, ?)";
 
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 s.date,
                 s.startTime,
                 s.endTime);
 
-        s.id = PersistenceManager.getLastId();
+        s.id = SQLitePersistenceManager.getLastId();
 
         LOGGER.info("Created new shift ID " + s.id + " on " + s.date);
         return s;
@@ -205,12 +205,12 @@ public class Shift {
         }
 
         String query = "INSERT INTO Shifts (date, start_time, end_time) VALUES (?, ?, ?)";
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 date.toString(),
                 startTime.toString(),
                 endTime.toString());
 
-        this.id = PersistenceManager.getLastId();
+        this.id = SQLitePersistenceManager.getLastId();
     }
 
     // Update an existing shift
@@ -221,7 +221,7 @@ public class Shift {
         }
 
         String query = "UPDATE Shifts SET date = ?, start_time = ?, end_time = ? WHERE id = ?";
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 date.toString(),
                 startTime.toString(),
                 endTime.toString(),
@@ -231,7 +231,7 @@ public class Shift {
     // Save a booking to the database
     public void saveBooking(User user) {
         String query = "INSERT INTO ShiftBookings (shift_id, user_id) VALUES (?, ?)";
-        PersistenceManager.executeUpdate(query, this.id, user.getId());
+        SQLitePersistenceManager.executeUpdate(query, this.id, user.getId());
 
         // Update local cache
         bookedUsers.put(user.getId(), user);
@@ -240,7 +240,7 @@ public class Shift {
     // Remove a booking from the database
     public void removeBooking(User user) {
         String query = "DELETE FROM ShiftBookings WHERE shift_id = ? AND user_id = ?";
-        PersistenceManager.executeUpdate(query, this.id, user.getId());
+        SQLitePersistenceManager.executeUpdate(query, this.id, user.getId());
 
         // Update local cache
         bookedUsers.remove(user.getId());
@@ -267,7 +267,7 @@ public class Shift {
         }
 
         String query = "INSERT INTO ShiftBookings (shift_id, user_id) VALUES (?, ?)";
-        PersistenceManager.executeUpdate(query, this.id, u.getId());
+        SQLitePersistenceManager.executeUpdate(query, this.id, u.getId());
 
         this.bookedUsers.put(u.getId(), u);
         LOGGER.info("Added booking for user " + u.getUserName() + " to shift ID " + this.id);
@@ -280,7 +280,7 @@ public class Shift {
         }
 
         String query = "DELETE FROM ShiftBookings WHERE shift_id = ? AND user_id = ?";
-        int rowsAffected = PersistenceManager.executeUpdate(query, this.id, u.getId());
+        int rowsAffected = SQLitePersistenceManager.executeUpdate(query, this.id, u.getId());
 
         if (rowsAffected > 0) {
             User removed = this.bookedUsers.remove(u.getId());

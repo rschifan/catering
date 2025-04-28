@@ -1,102 +1,70 @@
 package catering.businesslogic.menu;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.List;
 
 import catering.businesslogic.recipe.Recipe;
-import catering.persistence.BatchUpdateHandler;
-import catering.persistence.PersistenceManager;
-import catering.persistence.ResultHandler;
+import catering.persistence.strategy.MenuItemPersister;
+import catering.persistence.strategy.impl.SQLiteMenuItemPersister;
 
 public class MenuItem {
 
-    public static void create(int menuid, int sectionid, ArrayList<MenuItem> items) {
+    private static MenuItemPersister persister = new SQLiteMenuItemPersister();
 
-        String itemInsert = "INSERT INTO MenuItems (menu_id, section_id, description, recipe_id, position) VALUES (?, ?, ?, ?, ?);";
-
-        PersistenceManager.executeBatchUpdate(itemInsert, items.size(), new BatchUpdateHandler() {
-            @Override
-            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setInt(1, menuid);
-                ps.setInt(2, sectionid);
-                ps.setString(3, items.get(batchCount).description);
-                ps.setInt(4, items.get(batchCount).recipe.getId());
-                ps.setInt(5, batchCount);
-            }
-
-            @Override
-            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                items.get(count).id = rs.getInt(1);
-            }
-        });
+    public static void insert(int menuId, int sectionId, List<MenuItem> items) {
+        persister.insert(menuId, sectionId, items);
     }
 
-    public static void create(int menuid, int sectionid, MenuItem mi, int pos) {
-
-        String itemInsert = "INSERT INTO MenuItems (menu_id, section_id, description, recipe_id, position) VALUES (?, ?, ?, ?, ?)";
-
-        PersistenceManager.executeUpdate(itemInsert, menuid, sectionid, mi.description, mi.recipe.getId(), pos);
-
-        mi.id = PersistenceManager.getLastId();
+    public static void insert(int menuId, int sectionId, MenuItem item, int position) {
+        persister.insert(menuId, sectionId, item, position);
     }
 
-    public static ArrayList<MenuItem> loadMenuItems(int menu_id, int sec_id) {
-
-        ArrayList<MenuItem> result = new ArrayList<>();
-        ArrayList<Integer> recids = new ArrayList<>();
-
-        String query = "SELECT * FROM MenuItems WHERE menu_id = ? AND section_id = ? ORDER BY position";
-
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                MenuItem mi = new MenuItem();
-                mi.id = rs.getInt("id");
-                mi.description = rs.getString("description");
-                result.add(mi);
-                recids.add(rs.getInt("recipe_id"));
-            }
-        }, menu_id, sec_id);
-
-        for (int i = 0; i < result.size(); i++) {
-            result.get(i).recipe = Recipe.loadRecipe(recids.get(i));
-        }
-
-        return result;
+    public static List<MenuItem> loadMenuItems(int menuId, int sectionId) {
+        return persister.load(menuId, sectionId);
     }
 
-    public static void saveSection(int sec_id, MenuItem mi) {
-        String upd = "UPDATE MenuItems SET section_id = ? WHERE id = ?";
-        PersistenceManager.executeUpdate(upd, sec_id, mi.id);
+    public static void saveSection(int sectionId, MenuItem item) {
+        persister.update(sectionId, item);
     }
 
-    public static void saveDescription(MenuItem mi) {
-        String upd = "UPDATE MenuItems SET description = ? WHERE id = ?";
-        PersistenceManager.executeUpdate(upd, mi.getDescription(), mi.id);
+    public static void saveDescription(MenuItem item) {
+        persister.update(item);
     }
 
-    public static void removeItem(MenuItem mi) {
-        String rem = "DELETE FROM MenuItems WHERE id = ?";
-        PersistenceManager.executeUpdate(rem, mi.getId());
+    public static void removeItem(MenuItem item) {
+        persister.delete(item);
+    }
+
+    public static MenuItem create(Recipe rec) {
+        return new MenuItem(rec);
+    }
+
+    public static MenuItem create(Recipe rec, String desc) {
+        return new MenuItem(rec, desc);
+    }
+
+    public static MenuItem create(MenuItem toCopy) {
+        return new MenuItem(toCopy);
+    }
+
+    public static MenuItem create() {
+        return new MenuItem();
     }
 
     private int id;
     private String description;
     private Recipe recipe;
 
-    public MenuItem(Recipe rec) {
+    private MenuItem(Recipe rec) {
         this(rec, rec.getName());
     }
 
-    public MenuItem(Recipe rec, String desc) {
+    private MenuItem(Recipe rec, String desc) {
         id = 0;
         recipe = rec;
         description = desc;
     }
 
-    public MenuItem(MenuItem toCopy) {
+    private MenuItem(MenuItem toCopy) {
         this(toCopy.recipe, toCopy.description);
     }
 
@@ -199,4 +167,9 @@ public class MenuItem {
 
         return result;
     }
+
+    public void setId(int iid) {
+        this.id = iid;
+    }
+
 }

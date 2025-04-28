@@ -19,7 +19,7 @@ import catering.businesslogic.event.Event;
 import catering.businesslogic.event.Service;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.util.LogManager;
 
 @TestMethodOrder(OrderAnnotation.class)
@@ -35,7 +35,7 @@ public class SummarySheetTest {
 
     @BeforeAll
     static void init() {
-        PersistenceManager.initializeDatabase("database/catering_init_sqlite.sql");
+        SQLitePersistenceManager.initializeDatabase("database/catering_init_sqlite.sql");
         app = CatERing.getInstance();
     }
 
@@ -76,6 +76,20 @@ public class SummarySheetTest {
         LOGGER.info("Testing summary sheet creation");
 
         try {
+            // Check if service has a menu assigned
+            assertNotNull(testService.getMenu(), "Service should have a menu assigned");
+            LOGGER.info("Service menu: " + testService.getMenu().getTitle());
+
+            // Check if menu has sections
+            assertNotNull(testService.getMenu().getSections(), "Menu should have sections");
+            assertFalse(testService.getMenu().getSections().isEmpty(), "Menu should have at least one section");
+            LOGGER.info("Menu has " + testService.getMenu().getSections().size() + " sections");
+
+            // Debug section details
+            testService.getMenu().getSections()
+                    .forEach(section -> LOGGER.info("Section: " + section.getName() + " with " +
+                            (section.getItems() != null ? section.getItems().size() : "null") + " items"));
+
             // Create summary sheet
             SummarySheet sheet = app.getKitchenTaskManager().generateSummarySheet(testEvent, testService);
 
@@ -83,7 +97,13 @@ public class SummarySheetTest {
             assertNotNull(sheet, "Summary sheet should not be null");
             assertEquals(chef, sheet.getOwner(), "Sheet owner should be the chef who created it");
             assertNotNull(sheet.getTaskList(), "Task list should not be null");
+
+            if (sheet.getTaskList().isEmpty()) {
+                LOGGER.warning("Task list is empty! Check if tasks are being created from menu sections");
+            }
+
             assertTrue(sheet.getTaskList().size() > 0, "Task list should contain tasks");
+            LOGGER.info("Created summary sheet with " + sheet.getTaskList().size() + " tasks");
 
             LOGGER.info("Created summary sheet: " + sheet.toString());
         } catch (UseCaseLogicException e) {
@@ -114,7 +134,8 @@ public class SummarySheetTest {
             shift.addBooking(cook);
 
             // Assign the task
-            Assignment assignment = app.getKitchenTaskManager().assignTask(taskToAssign, shift, cook);
+            Assignment assignment = app.getKitchenTaskManager().assignTask(taskToAssign,
+                    shift, cook);
 
             // Verify assignment
             assertNotNull(assignment, "Assignment should not be null");

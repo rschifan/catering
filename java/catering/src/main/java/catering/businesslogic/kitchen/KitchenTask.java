@@ -9,7 +9,7 @@ import catering.businesslogic.recipe.KitchenProcess;
 import catering.businesslogic.recipe.Preparation;
 import catering.businesslogic.recipe.Recipe;
 import catering.persistence.BatchUpdateHandler;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 
 public class KitchenTask {
@@ -51,7 +51,7 @@ public class KitchenTask {
     public static void saveAllNewTasks(int id, ArrayList<KitchenTask> taskList) {
         String secInsert = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
 
-        PersistenceManager.executeBatchUpdate(secInsert, taskList.size(), new BatchUpdateHandler() {
+        SQLitePersistenceManager.executeBatchUpdate(secInsert, taskList.size(), new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
                 ps.setInt(1, id);
@@ -75,7 +75,7 @@ public class KitchenTask {
     public static void saveNewTask(int id, KitchenTask task, int taskPosition) {
         String query = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 id,
                 task.kitchenProcess.getId(),
                 task.getDescription(),
@@ -85,7 +85,7 @@ public class KitchenTask {
                 task.quantity,
                 task.portions);
 
-        task.id = PersistenceManager.getLastId();
+        task.id = SQLitePersistenceManager.getLastId();
 
     }
 
@@ -95,7 +95,7 @@ public class KitchenTask {
         ArrayList<Integer> recipeIds = new ArrayList<>();
         ArrayList<Boolean> types = new ArrayList<>();
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
 
@@ -131,7 +131,7 @@ public class KitchenTask {
         ArrayList<Integer> ids = new ArrayList<>(1);
         ArrayList<Boolean> types = new ArrayList<>(1);
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 if (taskHolder[0] != null)
@@ -169,7 +169,7 @@ public class KitchenTask {
     public static void updateTaskChanged(KitchenTask task) {
         String query = "UPDATE Tasks SET description = ?, quantity = ?, portions = ?, ready = ? WHERE id = ?";
 
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 task.getDescription(),
                 task.quantity,
                 task.portions,

@@ -10,10 +10,9 @@ import java.util.logging.Logger;
 
 import catering.util.LogManager;
 
+public class SQLitePersistenceManager {
 
-public class PersistenceManager {
-
-    private static final Logger LOGGER = LogManager.getLogger(PersistenceManager.class);
+    private static final Logger LOGGER = LogManager.getLogger(SQLitePersistenceManager.class);
     private static final String DB_PATH = new File("database", "catering.db").getAbsolutePath();
     private static final String SCRIPT_PATH = new File("database", "catering_init_sqlite.sql").getAbsolutePath();
     private static final String URL = "jdbc:sqlite:" + DB_PATH;
@@ -21,7 +20,7 @@ public class PersistenceManager {
     private static int lastId;
 
     // Make constructor private to prevent instantiation
-    private PersistenceManager() {
+    private SQLitePersistenceManager() {
     }
 
     // Ensure the database file exists
@@ -73,7 +72,7 @@ public class PersistenceManager {
 
             // Execute each statement
             try (Connection conn = DriverManager.getConnection(URL);
-                 Statement stmt = conn.createStatement()) {
+                    Statement stmt = conn.createStatement()) {
 
                 for (String statement : statements) {
                     String trimmedStmt = statement.trim();
@@ -151,6 +150,41 @@ public class PersistenceManager {
         }
 
         return result;
+    }
+
+    /**
+     * Functional interface for customizing parameter setting in prepared statements
+     */
+    @FunctionalInterface
+    public interface PreparedStatementSetter {
+        void setParameters(PreparedStatement ps, int index) throws SQLException;
+    }
+
+    /**
+     * Executes a batch update without handling generated IDs - useful for updates
+     * that don't return IDs
+     * 
+     * @param query           SQL query to execute
+     * @param count           Number of updates to perform
+     * @param parameterSetter Function to set parameters on each prepared statement
+     * @return Array of update counts
+     */
+    public static int[] executeSimpleBatchUpdate(String query, int count, PreparedStatementSetter parameterSetter) {
+        if (count == 0) {
+            return new int[0];
+        }
+
+        return executeBatchUpdate(query, count, new BatchUpdateHandler() {
+            @Override
+            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
+                parameterSetter.setParameters(ps, batchCount);
+            }
+
+            @Override
+            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
+                // No IDs to handle
+            }
+        });
     }
 
     /**

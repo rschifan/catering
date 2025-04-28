@@ -1,6 +1,6 @@
 package catering.businesslogic.user;
 
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 
 import java.sql.ResultSet;
@@ -117,7 +117,7 @@ public class User {
         User load = new User();
         String userQuery = "SELECT * FROM Users WHERE id = ?";
 
-        PersistenceManager.executeQuery(userQuery, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(userQuery, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 load.id = rs.getInt("id");
@@ -135,7 +135,7 @@ public class User {
         User u = new User();
         String userQuery = "SELECT * FROM Users WHERE username = ?";
 
-        PersistenceManager.executeQuery(userQuery, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(userQuery, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 u.id = rs.getInt("id");
@@ -153,7 +153,7 @@ public class User {
         String userQuery = "SELECT * FROM Users";
         ArrayList<User> users = new ArrayList<>();
 
-        PersistenceManager.executeQuery(userQuery, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(userQuery, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 User u = new User();
@@ -173,7 +173,7 @@ public class User {
     private static void loadRolesForUser(User u) {
         String roleQuery = "SELECT * FROM UserRoles WHERE user_id = ?";
 
-        PersistenceManager.executeQuery(roleQuery, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(roleQuery, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 int role = rs.getInt("role_id");
@@ -206,8 +206,8 @@ public class User {
 
         String query = "INSERT INTO Users (username) VALUES(?)";
 
-        PersistenceManager.executeUpdate(query, username);
-        id = PersistenceManager.getLastId();
+        SQLitePersistenceManager.executeUpdate(query, username);
+        id = SQLitePersistenceManager.getLastId();
 
         if (id > 0) {
             // Save roles
@@ -228,7 +228,7 @@ public class User {
 
         String query = "UPDATE Users SET username = ? WHERE id = ?";
 
-        int rows = PersistenceManager.executeUpdate(query, username, id);
+        int rows = SQLitePersistenceManager.executeUpdate(query, username, id);
 
         // Update user roles
         saveUserRoles();
@@ -247,11 +247,11 @@ public class User {
 
         // First delete user roles
         String deleteRolesQuery = "DELETE FROM UserRoles WHERE user_id = ?";
-        PersistenceManager.executeUpdate(deleteRolesQuery, id);
+        SQLitePersistenceManager.executeUpdate(deleteRolesQuery, id);
 
         // Then delete user
         String deleteUserQuery = "DELETE FROM Users WHERE id = ?";
-        int rows = PersistenceManager.executeUpdate(deleteUserQuery, id);
+        int rows = SQLitePersistenceManager.executeUpdate(deleteUserQuery, id);
 
         if (rows > 0) {
             id = 0;
@@ -269,13 +269,13 @@ public class User {
 
         // First delete existing roles
         String deleteQuery = "DELETE FROM UserRoles WHERE user_id = ?";
-        PersistenceManager.executeUpdate(deleteQuery, id);
+        SQLitePersistenceManager.executeUpdate(deleteQuery, id);
 
         // Then insert new roles
         for (Role role : roles) {
             String roleId = getRoleStringId(role);
             String insertQuery = "INSERT INTO UserRoles (user_id, role_id) VALUES(?, ?)";
-            PersistenceManager.executeUpdate(insertQuery, id, roleId);
+            SQLitePersistenceManager.executeUpdate(insertQuery, id, roleId);
         }
     }
 

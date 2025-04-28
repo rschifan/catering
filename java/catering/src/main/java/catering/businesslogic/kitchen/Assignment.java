@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 
 /**
@@ -87,7 +87,7 @@ public class Assignment {
         ArrayList<Integer> taskIds = new ArrayList<>();
         ArrayList<Integer> cookIds = new ArrayList<>();
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 // Create a new Assignment object for each row
@@ -120,7 +120,7 @@ public class Assignment {
      */
     public static void updateAssignment(Assignment a) {
         String upd = "UPDATE Assignment SET shift_id = ?, cook_id = ? WHERE id = ?";
-        PersistenceManager.executeUpdate(upd,
+        SQLitePersistenceManager.executeUpdate(upd,
                 a.shift.getId(),
                 (a.cook == null ? 0 : a.cook.getId()),
                 a.id);
@@ -133,7 +133,7 @@ public class Assignment {
      */
     public static void deleteAssignment(Assignment a) {
         String query = "DELETE FROM Assignment WHERE id = ?";
-        PersistenceManager.executeUpdate(query, a.id);
+        SQLitePersistenceManager.executeUpdate(query, a.id);
 
     }
 
@@ -145,7 +145,7 @@ public class Assignment {
      */
     public static void saveAllNewAssignment(int id, ArrayList<Assignment> assignmentList) {
         String secInsert = "INSERT INTO Assignment (sumsheet_id, shift_id, task_id, cook_id) VALUES (?, ?, ?, ?);";
-        PersistenceManager.executeBatchUpdate(secInsert, assignmentList.size(), new BatchUpdateHandler() {
+        SQLitePersistenceManager.executeBatchUpdate(secInsert, assignmentList.size(), new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
                 ps.setInt(1, id);
@@ -170,12 +170,12 @@ public class Assignment {
      */
     public static void saveNewAssignment(int id, Assignment a) {
         String query = "INSERT INTO Assignment (sumsheet_id, shift_id, task_id, cook_id) VALUES (?, ?, ?, ?)";
-        PersistenceManager.executeUpdate(query,
+        SQLitePersistenceManager.executeUpdate(query,
                 id,
                 a.shift.getId(),
                 a.task.getId(),
                 (a.cook == null ? 0 : a.cook.getId()));
-        a.id = PersistenceManager.getLastId();
+        a.id = SQLitePersistenceManager.getLastId();
 
     }
 

@@ -1,6 +1,6 @@
 package catering.businesslogic.recipe;
 
-import catering.persistence.PersistenceManager;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.ResultHandler;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,7 +42,7 @@ public class Recipe extends AbstractKitchenProcess {
         ArrayList<Recipe> recipes = new ArrayList<>();
 
         String query = "SELECT * FROM Recipes";
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Recipe rec = new Recipe(rs.getString("name"));
@@ -93,7 +93,7 @@ public class Recipe extends AbstractKitchenProcess {
         Recipe[] recHolder = new Recipe[1]; // Use array to allow modification in lambda
         String query = "SELECT * FROM Recipes WHERE id = ?";
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Recipe rec = new Recipe();
@@ -128,7 +128,7 @@ public class Recipe extends AbstractKitchenProcess {
         Recipe[] recHolder = new Recipe[1]; // Use array to allow modification in lambda
         String query = "SELECT * FROM Recipes WHERE name = ?";
 
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Recipe rec = new Recipe();
@@ -160,7 +160,7 @@ public class Recipe extends AbstractKitchenProcess {
      */
     private static void loadPreparationsForRecipe(Recipe recipe) {
         String query = "SELECT preparation_id FROM RecipePreparations WHERE recipe_id = ?";
-        PersistenceManager.executeQuery(query, new ResultHandler() {
+        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Preparation prep = Preparation.loadPreparationById(rs.getInt("preparation_id"));
@@ -182,8 +182,8 @@ public class Recipe extends AbstractKitchenProcess {
 
         String query = "INSERT INTO Recipes (name, description) VALUES(?, ?)";
 
-        PersistenceManager.executeUpdate(query, name, description);
-        id = PersistenceManager.getLastId();
+        SQLitePersistenceManager.executeUpdate(query, name, description);
+        id = SQLitePersistenceManager.getLastId();
 
         // Save recipe-preparation relationships
         savePreparationRelationships();
@@ -202,7 +202,7 @@ public class Recipe extends AbstractKitchenProcess {
 
         String query = "UPDATE Recipes SET name = ?, description = ? WHERE id = ?";
 
-        int rows = PersistenceManager.executeUpdate(query, name, description, id);
+        int rows = SQLitePersistenceManager.executeUpdate(query, name, description, id);
 
         // Update recipe-preparation relationships
         savePreparationRelationships();
@@ -214,12 +214,12 @@ public class Recipe extends AbstractKitchenProcess {
         if (id == 0)
             return;
         String deleteQuery = "DELETE FROM RecipePreparations WHERE recipe_id = ?";
-        PersistenceManager.executeUpdate(deleteQuery, id);
+        SQLitePersistenceManager.executeUpdate(deleteQuery, id);
 
         for (KitchenProcess kp : children) {
             if (!kp.isRecipe() && kp.getId() > 0) {
                 String insertQuery = "INSERT INTO RecipePreparations (recipe_id, preparation_id) VALUES(?, ?)";
-                PersistenceManager.executeUpdate(insertQuery, id, kp.getId());
+                SQLitePersistenceManager.executeUpdate(insertQuery, id, kp.getId());
             }
         }
     }

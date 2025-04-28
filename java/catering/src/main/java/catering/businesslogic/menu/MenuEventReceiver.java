@@ -18,8 +18,6 @@ public interface MenuEventReceiver {
 
     public void updateSectionChangedName(Menu m, Section s);
 
-    public void updateSectionsRearranged(Menu m);
-
     public void updateMenuItemAdded(Menu m, MenuItem mi);
 
     public void updateMenuItemDeleted(Menu m, Section sec, MenuItem mi);
@@ -28,8 +26,10 @@ public interface MenuEventReceiver {
 
     public void updateMenuItemDescriptionChanged(Menu m, MenuItem mi);
 
-    public void updateMenuItemsRearranged(Menu m, Section s);
+    // public void updateSectionsRearranged(Menu m);
 
-    public void updateFreeMenuItemsRearranged(Menu m);
+    // public void updateMenuItemsRearranged(Menu m, Section s);
+
+    // public void updateFreeMenuItemsRearranged(Menu m);
 
 }

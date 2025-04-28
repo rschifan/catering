@@ -1,20 +1,19 @@
 package catering.businesslogic.menu;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import catering.businesslogic.recipe.KitchenProcess;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
-import catering.persistence.BatchUpdateHandler;
-import catering.persistence.PersistenceManager;
-import catering.persistence.ResultHandler;
+import catering.persistence.strategy.MenuPersister;
+import catering.persistence.strategy.impl.SQLiteMenuPersister;
 
 public class Menu {
+
+    private static final MenuPersister persister = new SQLiteMenuPersister();
 
     // Feature constants
     public static final String FEATURE_NEEDS_COOK = "needsCook";
@@ -31,192 +30,55 @@ public class Menu {
             FEATURE_NEEDS_KITCHEN
     };
 
-    public static void create(Menu m) {
-
-        String query = "INSERT INTO Menus (title, owner_id, published) VALUES (?, ?, ?);";
-
-        int[] result = PersistenceManager.executeBatchUpdate(query, 1, new BatchUpdateHandler() {
-            @Override
-            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setString(1, m.title);
-                ps.setInt(2, m.owner.getId());
-                ps.setBoolean(3, m.published);
-            }
-
-            @Override
-            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                if (count == 0) {
-                    m.id = rs.getInt(1);
-                }
-            }
-        });
-
-        if (result[0] > 0) {
-            // Save features
-            saveFeaturesToDB(m);
-
-            // Save sections if any
-            if (!m.sections.isEmpty()) {
-                Section.create(m.id, m.sections);
-            }
-
-            // Save free items if any
-            if (!m.freeItems.isEmpty()) {
-                MenuItem.create(m.id, 0, m.freeItems);
-            }
-        }
+    public static Menu create() {
+        return new Menu();
     }
 
-    /**
-     * Load a menu from the database by ID
-     */
-    public static Menu load(Integer id) {
-
-        String query = "SELECT * FROM Menus WHERE id = ?";
-
-        Menu m = new Menu();
-
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-
-                m.id = id;
-                m.title = rs.getString("title");
-                m.published = rs.getBoolean("published");
-                m.owner = User.load(rs.getInt("owner_id"));
-
-                // Load sections
-                m.sections = Section.loadSections(id);
-
-                // Load free items
-                m.freeItems = MenuItem.loadMenuItems(id, 0);
-
-                // Load features
-                loadFeaturesFromDB(m);
-
-                // Check if menu is in use
-                checkIfMenuIsInUse(m);
-
-            }
-        }, id);
-
-        return m;
+    public static Menu create(int menuId) {
+        return new Menu(menuId);
     }
 
-    /**
-     * Delete a menu from the database
-     */
+    public static Menu create(User owner, String title) {
+        return new Menu(owner, title);
+    }
+
+    public static Menu create(User owner, String title, String[] features) {
+        return new Menu(owner, title, features);
+    }
+
+    public static Menu create(int id, User owner, String title, String[] features) {
+        Menu menu = new Menu(id, owner, title, false, false, features);
+        return menu;
+    }
+
+    public static Menu create(int id, User owner, String title, boolean published, boolean inUse,
+            String[] features) {
+        Menu menu = new Menu(id, owner, title, published, inUse, features);
+        return menu;
+    }
+
+    public static void insert(Menu m) {
+        persister.insert(m);
+    }
+
+    public static Menu load(int id) {
+        return persister.load(id);
+    }
+
     public static void delete(Menu m) {
-        PersistenceManager.executeUpdate("DELETE FROM MenuItems WHERE menu_id = ?", m.id);
-        PersistenceManager.executeUpdate("DELETE FROM MenuSections WHERE menu_id = ?", m.id);
-        PersistenceManager.executeUpdate("DELETE FROM MenuFeatures WHERE menu_id = ?", m.getId());
-        PersistenceManager.executeUpdate("DELETE FROM Menus WHERE id = ?", m.getId());
+        persister.delete(m);
     }
 
     public static void saveTitle(Menu m) {
-        PersistenceManager.executeUpdate("UPDATE Menus SET title = ? WHERE id = ?",
-                m.getTitle(), m.getId());
+        persister.update(m);
     }
 
-    /**
-     * Save the published status of a menu
-     */
     public static void savePublished(Menu m) {
-        PersistenceManager.executeUpdate("UPDATE Menus SET published = ? WHERE id = ?",
-                m.published, m.getId());
+        persister.update(m);
     }
 
-    /**
-     * Save the features of a menu
-     */
     public static void saveFeatures(Menu m) {
-        // First delete existing features
-        PersistenceManager.executeUpdate("DELETE FROM MenuFeatures WHERE menu_id = ?", m.getId());
-
-        // Then add the updated features
-        saveFeaturesToDB(m);
-    }
-
-    /**
-     * Save the section order of a menu
-     */
-    public static void saveSectionOrder(Menu m) {
-        String query = "UPDATE MenuSections SET position = ? WHERE id = ?";
-        PersistenceManager.executeBatchUpdate(query, m.sections.size(), new BatchUpdateHandler() {
-            @Override
-            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setInt(1, batchCount);
-                ps.setInt(2, m.sections.get(batchCount).getId());
-            }
-
-            @Override
-            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                // No generated IDs to handle
-            }
-        });
-    }
-
-    /**
-     * Save the order of free items in a menu
-     */
-    public static void saveFreeItemOrder(Menu m) {
-        String query = "UPDATE MenuItems SET position = ? WHERE id = ?";
-        PersistenceManager.executeBatchUpdate(query, m.freeItems.size(), new BatchUpdateHandler() {
-            @Override
-            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setInt(1, batchCount);
-                ps.setInt(2, m.freeItems.get(batchCount).getId());
-            }
-
-            @Override
-            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                // No generated IDs to handle
-            }
-        });
-    }
-
-    /**
-     * Save features to the database
-     */
-    private static void saveFeaturesToDB(Menu m) {
-        String query = "INSERT INTO MenuFeatures (menu_id, name, value) VALUES (?, ?, ?)";
-        String[] features = m.features.keySet().toArray(new String[0]);
-        PersistenceManager.executeBatchUpdate(query, features.length, new BatchUpdateHandler() {
-            @Override
-            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setInt(1, m.id);
-                ps.setString(2, features[batchCount]);
-                ps.setBoolean(3, m.features.get(features[batchCount]));
-            }
-
-            @Override
-            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                // No generated IDs to handle
-            }
-        });
-    }
-
-    /**
-     * Load features from the database
-     */
-    private static void loadFeaturesFromDB(Menu m) {
-        String query = "SELECT * FROM MenuFeatures WHERE menu_id = ?";
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                m.features.put(rs.getString("name"), rs.getBoolean("value"));
-            }
-        }, m.id);
-    }
-
-    private static void checkIfMenuIsInUse(Menu m) {
-        String query = "SELECT * FROM Services WHERE approved_menu_id = ?";
-        PersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                m.inUse = true;
-            }
-        }, m.id);
+        persister.update(m);
     }
 
     private int id;
@@ -229,37 +91,53 @@ public class Menu {
 
     private HashMap<String, Boolean> features;
 
-    private ArrayList<MenuItem> freeItems;
+    private List<MenuItem> freeItems;
 
-    private ArrayList<Section> sections;
+    private List<Section> sections;
 
     private User owner;
 
-    public Menu(User owner, String title, String[] menuFeatures) {
-        this.id = 0;
+    private Menu(int id, User owner, String title, boolean published, boolean inUse, String[] features) {
+        this.id = id;
         this.title = title;
         this.owner = owner;
-        this.published = false;
-        this.inUse = false;
-        this.features = new HashMap<String, Boolean>();
+        this.published = published;
+        this.inUse = inUse;
+
         this.sections = new ArrayList<Section>();
         this.freeItems = new ArrayList<MenuItem>();
 
-        for (String feature : menuFeatures) {
+        this.features = new HashMap<String, Boolean>();
+
+        if (features == null || features.length == 0)
+            features = DEFAULT_FEATURES;
+
+        for (String feature : features) {
             this.features.put(feature, false);
         }
     }
 
-    public Menu(User owner, String title) {
+    private Menu(User owner, String title, String[] menuFeatures) {
+        this(0, owner, title, false, false, menuFeatures);
+    }
+
+    private Menu(User owner, String title) {
         this(owner, title, DEFAULT_FEATURES);
     }
 
+    private Menu(String title) {
+        this(null, title);
+    }
+
+    private Menu(int id) {
+        this(id, null, null, false, false, null);
+    }
+
     private Menu() {
-        this(null, null);
     }
 
     public Section addSection(String name) {
-        Section sec = new Section(name);
+        Section sec = Section.create(name);
         this.sections.add(sec);
         return sec;
     }
@@ -309,13 +187,8 @@ public class Menu {
         return this.sections.indexOf(sec);
     }
 
-    public ArrayList<Section> getSections() {
+    public List<Section> getSections() {
         return this.sections;
-    }
-
-    public void moveSection(Section sec, int position) {
-        sections.remove(sec);
-        sections.add(position, sec);
     }
 
     public void removeSection(Section s, boolean deleteItems) {
@@ -330,7 +203,7 @@ public class Menu {
     }
 
     public MenuItem addItem(Recipe recipe, Section sec, String desc) {
-        MenuItem mi = new MenuItem(recipe, desc);
+        MenuItem mi = MenuItem.create(recipe, desc);
         if (sec != null) {
             sec.addItem(mi);
         } else {
@@ -339,7 +212,7 @@ public class Menu {
         return mi;
     }
 
-    public ArrayList<MenuItem> getFreeItems() {
+    public List<MenuItem> getFreeItems() {
         return this.freeItems;
     }
 
@@ -352,8 +225,7 @@ public class Menu {
     }
 
     public void moveFreeItem(MenuItem mi, int position) {
-        this.freeItems.remove(mi);
-        this.freeItems.add(position, mi);
+
     }
 
     public void changeItemSection(MenuItem mi, Section oldSec, Section newSec) {
@@ -407,9 +279,14 @@ public class Menu {
     }
 
     public ArrayList<KitchenProcess> getKitchenProcesses() {
+
+        System.out.println("cazzo: " + this.title);
+
         ArrayList<KitchenProcess> allKitchenProcesses = new ArrayList<>();
 
         for (MenuItem item : this.getItems()) {
+            System.out.println("Item: " + item.getDescription());
+            System.out.println("Recipe: " + item.getRecipe());
             Recipe recipe = item.getRecipe();
             allKitchenProcesses.add(recipe);
             allKitchenProcesses.addAll(recipe.getChildren());
@@ -426,8 +303,6 @@ public class Menu {
         }
     }
 
-    // ===== FEATURE MANAGEMENT =====
-
     public Map<String, Boolean> getFeatures() {
         return this.features;
     }
@@ -442,19 +317,10 @@ public class Menu {
         }
     }
 
-    public void setFeatures(boolean needsCook, boolean fingerFood, boolean buffet,
-            boolean warmDishes, boolean needsKitchen) {
-        setNeedsCook(needsCook);
-        setFingerFood(fingerFood);
-        setBuffet(buffet);
-        setWarmDishes(warmDishes);
-        setNeedsKitchen(needsKitchen);
-    }
-
-    public void setAndSaveFeatures(boolean needsCook, boolean fingerFood, boolean buffet,
-            boolean warmDishes, boolean needsKitchen) {
-        setFeatures(needsCook, fingerFood, buffet, warmDishes, needsKitchen);
-        saveFeatures(this);
+    public void setFeatures(Map<String, Boolean> features) {
+        for (Map.Entry<String, Boolean> entry : features.entrySet()) {
+            setFeature(entry.getKey(), entry.getValue());
+        }
     }
 
     // Specific feature getters and setters
@@ -532,12 +398,28 @@ public class Menu {
         this.published = published;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public boolean isInUse() {
         return this.inUse;
     }
 
+    public void setIntInUse(boolean inUse) {
+        this.inUse = inUse;
+    }
+
     public boolean isOwner(User u) {
         return u.getId() == this.owner.getId();
+    }
+
+    public void setSections(List<Section> sections) {
+        this.sections = sections;
+    }
+
+    public void setFreeItems(List<MenuItem> menuItems) {
+        this.freeItems = menuItems;
     }
 
     // ===== UTILITY METHODS =====
