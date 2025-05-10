@@ -10,17 +10,12 @@ import catering.persistence.BatchUpdateHandler;
 import catering.persistence.ResultHandler;
 import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.strategy.SectionPersister;
-import catering.util.LogManager;
-
-import java.util.logging.Logger;
 
 /**
  * SQLite implementation of the SectionPersister interface.
  * Handles database operations for Section objects using SQLite.
  */
 public class SQLiteSectionPersister implements SectionPersister {
-
-    private static final Logger LOGGER = LogManager.getLogger(SQLiteSectionPersister.class);
 
     // Organize SQL queries by operation type
     private static final class SQL {

@@ -6,7 +6,6 @@ import catering.businesslogic.CatERing;
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.event.Event;
 import catering.businesslogic.event.Service;
-import catering.businesslogic.recipe.KitchenProcess;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 

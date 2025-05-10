@@ -4,18 +4,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import catering.businesslogic.menu.MenuItem;
 import catering.businesslogic.recipe.Recipe;
 import catering.persistence.ResultHandler;
 import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.strategy.MenuItemPersister;
-import catering.util.LogManager;
 
 public class SQLiteMenuItemPersister implements MenuItemPersister {
-
-    private static final Logger LOGGER = LogManager.getLogger(SQLiteMenuItemPersister.class);
 
     // Organize SQL queries by operation type
     private static final class SQL {
