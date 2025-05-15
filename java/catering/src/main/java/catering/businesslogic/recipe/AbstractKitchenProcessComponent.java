@@ -2,19 +2,19 @@ package catering.businesslogic.recipe;
 
 import java.util.*;
 
-public abstract class AbstractKitchenProcess implements KitchenProcess {
+public abstract class AbstractKitchenProcessComponent implements KitchenProcessComponent {
     protected int id;
     protected String name;
     protected String description;
-    protected List<KitchenProcess> children = new ArrayList<>();
+    protected List<KitchenProcessComponent> children = new ArrayList<>();
 
-    public AbstractKitchenProcess(int id, String name, String description) {
+    public AbstractKitchenProcessComponent(int id, String name, String description) {
         this.id = id;
         this.name = name;
         this.description = description;
     }
 
-    public AbstractKitchenProcess() {
+    public AbstractKitchenProcessComponent() {
         this(0, "", "");
     }
 
@@ -48,17 +48,17 @@ public abstract class AbstractKitchenProcess implements KitchenProcess {
     }
 
     @Override
-    public List<KitchenProcess> getChildren() {
+    public List<KitchenProcessComponent> getChildren() {
         return children;
     }
 
     @Override
-    public void add(KitchenProcess p) {
+    public void add(KitchenProcessComponent p) {
         children.add(p);
     }
 
     @Override
-    public void remove(KitchenProcess p) {
+    public void remove(KitchenProcessComponent p) {
         children.remove(p);
     }
 
@@ -68,7 +68,7 @@ public abstract class AbstractKitchenProcess implements KitchenProcess {
             return true;
         if (obj == null || getClass() != obj.getClass())
             return false;
-        AbstractKitchenProcess other = (AbstractKitchenProcess) obj;
+        AbstractKitchenProcessComponent other = (AbstractKitchenProcessComponent) obj;
         // If both have valid IDs, compare by ID
         if (getId() > 0 && other.getId() > 0) {
             return getId() == other.getId();
@@ -79,8 +79,8 @@ public abstract class AbstractKitchenProcess implements KitchenProcess {
             return false;
         }
         // Compare children (order-insensitive)
-        Set<KitchenProcess> s1 = new HashSet<>(getChildren());
-        Set<KitchenProcess> s2 = new HashSet<>(other.getChildren());
+        Set<KitchenProcessComponent> s1 = new HashSet<>(getChildren());
+        Set<KitchenProcessComponent> s2 = new HashSet<>(other.getChildren());
         return s1.equals(s2);
     }
 
@@ -90,7 +90,7 @@ public abstract class AbstractKitchenProcess implements KitchenProcess {
             return Integer.hashCode(getId());
         }
         // Include children set in hash
-        Set<KitchenProcess> childSet = new HashSet<>(getChildren());
+        Set<KitchenProcessComponent> childSet = new HashSet<>(getChildren());
         return Objects.hash(getName(), getDescription(), childSet);
     }
 

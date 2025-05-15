@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import catering.businesslogic.recipe.KitchenProcess;
+import catering.businesslogic.recipe.KitchenProcessComponent;
 import catering.businesslogic.recipe.Preparation;
 import catering.businesslogic.recipe.Recipe;
 import catering.persistence.BatchUpdateHandler;
@@ -16,7 +16,7 @@ public class KitchenTask {
 
     private int id;
     private String description;
-    private KitchenProcess kitchenProcess;
+    private KitchenProcessComponent kitchenProcess;
     private int quantity;
     private int portions;
     private boolean ready;
@@ -25,11 +25,11 @@ public class KitchenTask {
     private KitchenTask() {
     }
 
-    public KitchenTask(KitchenProcess rec) {
+    public KitchenTask(KitchenProcessComponent rec) {
         this(rec, rec.getName());
     }
 
-    public KitchenTask(KitchenProcess rec, String desc) {
+    public KitchenTask(KitchenProcessComponent rec, String desc) {
         id = 0;
         kitchenProcess = rec;
         description = desc;
@@ -220,11 +220,11 @@ public class KitchenTask {
         this.description = description;
     }
 
-    public KitchenProcess getKitchenProcess() {
+    public KitchenProcessComponent getKitchenProcess() {
         return kitchenProcess;
     }
 
-    public void setKitchenProcess(KitchenProcess kitchenProcess) {
+    public void setKitchenProcess(KitchenProcessComponent kitchenProcess) {
         this.kitchenProcess = kitchenProcess;
     }
 

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import catering.businesslogic.recipe.KitchenProcess;
+import catering.businesslogic.recipe.KitchenProcessComponent;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
 import catering.persistence.strategy.MenuPersister;
@@ -278,11 +278,11 @@ public class Menu {
         return allItems;
     }
 
-    public ArrayList<KitchenProcess> getKitchenProcesses() {
+    public ArrayList<KitchenProcessComponent> getKitchenProcesses() {
 
         System.out.println("cazzo: " + this.title);
 
-        ArrayList<KitchenProcess> allKitchenProcesses = new ArrayList<>();
+        ArrayList<KitchenProcessComponent> allKitchenProcesses = new ArrayList<>();
 
         for (MenuItem item : this.getItems()) {
             System.out.println("Item: " + item.getDescription());

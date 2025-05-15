@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * Preparation represents an intermediate food preparation step.
  */
-public class Preparation extends AbstractKitchenProcess {
+public class Preparation extends AbstractKitchenProcessComponent {
 
     /**
      * Default constructor for loading from DB
@@ -28,17 +28,17 @@ public class Preparation extends AbstractKitchenProcess {
     }
 
     @Override
-    public void add(KitchenProcess p) {
+    public void add(KitchenProcessComponent p) {
         throw new UnsupportedOperationException("Cannot add child to a Preparation");
     }
 
     @Override
-    public void remove(KitchenProcess p) {
+    public void remove(KitchenProcessComponent p) {
         throw new UnsupportedOperationException("Cannot remove child from a Preparation");
     }
 
     @Override
-    public List<KitchenProcess> getChildren() {
+    public List<KitchenProcessComponent> getChildren() {
         return Collections.emptyList();
     }
 

@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * Recipe is a composite of KitchenProcess; holds only Preparation leaves.
  */
-public class Recipe extends AbstractKitchenProcess {
+public class Recipe extends AbstractKitchenProcessComponent {
 
     private Recipe() {
         super();
@@ -26,7 +26,7 @@ public class Recipe extends AbstractKitchenProcess {
     }
 
     @Override
-    public void add(KitchenProcess p) {
+    public void add(KitchenProcessComponent p) {
         if (p.isRecipe()) {
             throw new UnsupportedOperationException("Cannot add Recipe to Recipe");
         }
@@ -216,7 +216,7 @@ public class Recipe extends AbstractKitchenProcess {
         String deleteQuery = "DELETE FROM RecipePreparations WHERE recipe_id = ?";
         SQLitePersistenceManager.executeUpdate(deleteQuery, id);
 
-        for (KitchenProcess kp : children) {
+        for (KitchenProcessComponent kp : children) {
             if (!kp.isRecipe() && kp.getId() > 0) {
                 String insertQuery = "INSERT INTO RecipePreparations (recipe_id, preparation_id) VALUES(?, ?)";
                 SQLitePersistenceManager.executeUpdate(insertQuery, id, kp.getId());
