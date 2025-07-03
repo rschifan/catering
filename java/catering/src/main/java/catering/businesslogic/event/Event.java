@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 import catering.businesslogic.user.User;
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
-import catering.util.DateUtils;
 import catering.util.LogManager;
 
 /**
@@ -167,8 +166,8 @@ public class Event {
                 Event e = new Event();
                 e.id = rs.getInt("id");
                 e.name = rs.getString("name");
-                e.dateStart = DateUtils.getDateFromResultSet(rs, "date_start");
-                e.dateEnd = DateUtils.getDateFromResultSet(rs, "date_end");
+                e.dateStart = Date.valueOf(rs.getString("date_start"));
+                e.dateEnd = Date.valueOf(rs.getString("date_end"));
                 e.chef = User.load(rs.getInt("chef_id"));
                 events.add(e);
             }
@@ -202,10 +201,11 @@ public class Event {
                 eventFound[0] = true;
 
                 Event e = new Event();
+
                 e.id = rs.getInt("id");
                 e.name = rs.getString("name");
-                e.dateStart = DateUtils.getDateFromResultSet(rs, "date_start");
-                e.dateEnd = DateUtils.getDateFromResultSet(rs, "date_end");
+                e.dateStart = Date.valueOf(rs.getString("date_start"));
+                e.dateEnd = Date.valueOf(rs.getString("date_end"));
 
                 try {
                     e.chef = User.load(rs.getInt("chef_id"));
