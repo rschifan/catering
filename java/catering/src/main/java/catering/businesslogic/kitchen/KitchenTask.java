@@ -20,7 +20,6 @@ public class KitchenTask {
     private int quantity;
     private int portions;
     private boolean ready;
-    private boolean type;
 
     private KitchenTask() {
     }
@@ -33,7 +32,6 @@ public class KitchenTask {
         id = 0;
         kitchenProcess = rec;
         description = desc;
-        type = rec.isRecipe();
         ready = false;
         quantity = 0;
         portions = 0;
@@ -43,7 +41,6 @@ public class KitchenTask {
         this.id = 0;
         this.description = mi.description;
         this.kitchenProcess = mi.kitchenProcess;
-        this.type = mi.type;
     }
 
     // STATIC METHODS FOR PERSISTENCE
@@ -57,7 +54,7 @@ public class KitchenTask {
                 ps.setInt(1, id);
                 ps.setInt(2, taskList.get(batchCount).kitchenProcess.getId());
                 ps.setString(3, taskList.get(batchCount).description);
-                ps.setBoolean(4, taskList.get(batchCount).type);
+                ps.setBoolean(4, taskList.get(batchCount).kitchenProcess.isRecipe());
                 ps.setInt(5, batchCount);
                 ps.setBoolean(6, taskList.get(batchCount).ready);
                 ps.setInt(7, taskList.get(batchCount).quantity);
@@ -145,9 +142,8 @@ public class KitchenTask {
                 t.ready = rs.getBoolean("ready");
                 t.quantity = rs.getInt("quantity");
 
-                t.type = rs.getBoolean("type");
-                ids.add(rs.getInt("kitchenproc_id")); // Changed from kitchen_proc_id
-                types.add(t.type);
+                ids.add(rs.getInt("kitchenproc_id"));
+                types.add(rs.getBoolean("type"));
                 taskHolder[0] = t;
             }
         }, id); // Pass id as parameter

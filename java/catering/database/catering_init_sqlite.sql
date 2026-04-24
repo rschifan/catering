@@ -178,7 +178,7 @@ CREATE TABLE
         `id` INTEGER PRIMARY KEY AUTOINCREMENT,
         `sumsheet_id` INTEGER NOT NULL,
         `task_id` INTEGER NOT NULL,
-        `cook_id` INTEGER NOT NULL,
+        `cook_id` INTEGER,
         `shift_id` INTEGER NOT NULL,
         FOREIGN KEY (`sumsheet_id`) REFERENCES `SummarySheets` (`id`),
         FOREIGN KEY (`task_id`) REFERENCES `Tasks` (`id`),

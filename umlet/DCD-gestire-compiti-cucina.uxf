@@ -1,17 +1,17 @@
 <diagram program="umletino" version="15.1"><zoom_level>8</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>408</x><y>24</y><w>272</w><h>32</h></coordinates><panel_attributes>halign=center
 *Design Class Diagram (DCD)*
+after UC2 — Gestire compiti in cucina (cumulative, includes UC1)
 lw=0
 fontsize=20
 </panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLPackage</id><coordinates><x>856</x><y>280</y><w>240</w><h>392</h></coordinates><panel_attributes>UserManagement
 fg=gray</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLPackage</id><coordinates><x>56</x><y>32</y><w>792</w><h>440</h></coordinates><panel_attributes>MenuManagement</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLPackage</id><coordinates><x>856</x><y>0</y><w>240</w><h>264</h></coordinates><panel_attributes>RecipeManagement
 fg=gray</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>128</x><y>64</y><w>280</w><h>232</h></coordinates><panel_attributes>MenuManager
 --
--menuFeatures: String[]
+-menuFeatures: Map&lt;String, Boolean&gt;
 --
-
+*event sender methods*
 +addEventReceiver(er: MenuEventReceiver)
 +removeEventReceiver(er: MenuEventReceiver)
-
 -notifySectionAdded(sec: Section)
 -notifyMenuItemAdded(mi: MenuItem)
 -notifyMenuCreated(m: Menu)
@@ -19,11 +19,11 @@ fg=gray</panel_attributes><additional_attributes></additional_attributes></eleme
 -notifySectionsRearranged(m: Menu)
 
 --
-
+*operations methods*
 +defineSection(name: String)
 +insertItem(r: Recipe, sec?: Section, desc?: String)
 +createMenu(title: String): Menu
-</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>496</x><y>56</y><w>296</w><h>232</h></coordinates><panel_attributes>Menu
++getRecipeBook( ): ArrayList&lt;Recipe&gt;</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>496</x><y>56</y><w>296</w><h>232</h></coordinates><panel_attributes>Menu
 --
 -title: String
 -published: boolean
@@ -31,16 +31,16 @@ fg=gray</panel_attributes><additional_attributes></additional_attributes></eleme
 -features: Map&lt;String, Boolean&gt;
 --
 
-+create(owner: User, title: String, features: String[])
++create(owner: User, title: String, features: Map&lt;String, Boolean&gt;)
 +addSection(name: String)
 +addItem(r: Recipe, sec?: Section, desc?: String)
 +isOwner(user: User): boolean
 +isInUse(): boolean
 +hasSection(sec: Section): boolean
-+sectionsSize(): int
++getSectionCount(): int
 +moveSection(sec: Section, pos: int)
 
-+getKitchenProcesses():ArrayList&lt;KitchenProcess&gt;
++getNeededKitchenProcesses():ArrayList&lt;KitchenProcess&gt;
 
 fg=BLACK</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>400</x><y>176</y><w>112</w><h>40</h></coordinates><panel_attributes>lt=&lt;-
 currentMenu
@@ -143,7 +143,7 @@ fg=GRAY</panel_attributes><additional_attributes></additional_attributes></eleme
 +generateSummarySheet(event: Event, service: Service): SummarySheet</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>632</x><y>704</y><w>208</w><h>72</h></coordinates><panel_attributes>SummarySheet
 --
 --
-+create( )
++create(service: Service, user: User)
 +addTask(t: KitchenTask)
 fg=BLACK</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>592</x><y>856</y><w>248</w><h>72</h></coordinates><panel_attributes>KitchenTask
 --

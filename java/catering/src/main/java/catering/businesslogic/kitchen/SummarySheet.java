@@ -137,14 +137,10 @@ public class SummarySheet {
     private ArrayList<Assignment> assignmentList;
 
     public SummarySheet(Service service, User user) {
-
         this.service = service;
         this.owner = user;
-        taskList = new ArrayList<KitchenTask>();
-        assignmentList = new ArrayList<>();
-
-        service.getMenu().getKitchenProcesses()
-                .forEach(kitchenProcess -> taskList.add(new KitchenTask(kitchenProcess, kitchenProcess.getName())));
+        this.taskList = new ArrayList<KitchenTask>();
+        this.assignmentList = new ArrayList<>();
     }
 
     private SummarySheet() {
@@ -186,9 +182,9 @@ public class SummarySheet {
         return user.equals(this.owner);
     }
 
-    public Assignment modifyAssignment(Assignment ass, Shift shift, User cook) throws SummarySheetException {
+    public Assignment modifyAssignment(Assignment ass, Shift shift, User cook) throws UseCaseLogicException {
         if (!assignmentList.contains(ass))
-            throw new SummarySheetException("Invalid Assignment");
+            throw new UseCaseLogicException("Invalid Assignment");
         ass.setShift(shift);
         ass.setCook(cook);
         return ass;

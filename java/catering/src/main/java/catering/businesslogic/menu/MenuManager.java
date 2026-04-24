@@ -1,6 +1,7 @@
 package catering.businesslogic.menu;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import catering.businesslogic.CatERing;
 import catering.businesslogic.UseCaseLogicException;
@@ -10,10 +11,12 @@ import catering.businesslogic.user.User;
 public class MenuManager {
 
     private Menu currentMenu;
+    private HashMap<String, Boolean> menuFeatures;
     private ArrayList<MenuEventReceiver> eventReceivers;
 
     public MenuManager() {
         eventReceivers = new ArrayList<>();
+        menuFeatures = Menu.defaultFeaturesMap();
     }
 
     public Menu createMenu() throws UseCaseLogicException {
@@ -27,11 +30,15 @@ public class MenuManager {
             throw new UseCaseLogicException();
         }
 
-        Menu m = new Menu(user, title);
+        Menu m = new Menu(user, title, this.menuFeatures);
         this.setCurrentMenu(m);
         this.notifyMenuCreated(m);
 
         return m;
+    }
+
+    public ArrayList<Recipe> getRecipeBook() {
+        return CatERing.getInstance().getRecipeManager().getRecipeBook();
     }
 
     public Section defineSection(String name) throws UseCaseLogicException {
@@ -68,13 +75,11 @@ public class MenuManager {
         return this.insertItem(rec, null, desc);
     }
 
-    public void addMenuFeatures(String[] features, boolean[] values) throws UseCaseLogicException {
+    public void addMenuFeatures(HashMap<String, Boolean> features) throws UseCaseLogicException {
         if (this.currentMenu == null)
             throw new UseCaseLogicException();
-        if (features.length != values.length)
-            throw new UseCaseLogicException();
-        for (int i = 0; i < features.length; i++) {
-            this.currentMenu.setFeature(features[i], values[i]);
+        for (java.util.Map.Entry<String, Boolean> e : features.entrySet()) {
+            this.currentMenu.setFeature(e.getKey(), e.getValue());
         }
         this.notifyMenuFeaturesChanged();
     }
@@ -93,22 +98,22 @@ public class MenuManager {
         this.notifyMenuPublishedState();
     }
 
-    public void deleteMenu(Menu m) throws UseCaseLogicException, MenuException {
+    public void deleteMenu(Menu m) throws UseCaseLogicException {
         User u = CatERing.getInstance().getUserManager().getCurrentUser();
         if (!u.isChef())
             throw new UseCaseLogicException();
         if (m.isInUse() || !m.isOwner(u)) {
-            throw new MenuException();
+            throw new UseCaseLogicException("Menu is in use or user is not owner");
         }
         this.notifyMenuDeleted(m);
     }
 
-    public void chooseMenu(Menu m) throws UseCaseLogicException, MenuException {
+    public void chooseMenu(Menu m) throws UseCaseLogicException {
         User u = CatERing.getInstance().getUserManager().getCurrentUser();
         if (!u.isChef())
             throw new UseCaseLogicException();
         if (m.isInUse() || !m.isOwner(u)) {
-            throw new MenuException();
+            throw new UseCaseLogicException("Menu is in use or user is not owner");
         }
         this.currentMenu = m;
     }
@@ -135,7 +140,7 @@ public class MenuManager {
             throw new UseCaseLogicException();
         this.currentMenu.removeSection(s, deleteItems);
 
-        this.notifySectionDeleted(s, deleteItems);
+        this.notifySectionDeleted(this.currentMenu, s, deleteItems);
     }
 
     public void changeSectionName(Section s, String name) throws UseCaseLogicException {
@@ -150,10 +155,10 @@ public class MenuManager {
         if (currentMenu == null || currentMenu.getSectionPosition(sec) < 0)
             throw new UseCaseLogicException();
         if (position < 0 || position >= currentMenu.getSectionCount())
-            throw new IllegalArgumentException();
+            throw new UseCaseLogicException();
         this.currentMenu.moveSection(sec, position);
 
-        this.notifySectionsRearranged();
+        this.notifySectionsRearranged(this.currentMenu);
     }
 
     public void moveMenuItem(MenuItem it, int position) throws UseCaseLogicException {
@@ -165,14 +170,14 @@ public class MenuManager {
             if (currentMenu == null || currentMenu.getFreeItemPosition(mi) < 0)
                 throw new UseCaseLogicException();
             if (position < 0 || position >= currentMenu.getFreeItemCount())
-                throw new IllegalArgumentException();
+                throw new UseCaseLogicException();
             currentMenu.moveFreeItem(mi, position);
             this.notifyFreeItemsRearranged();
         } else {
             if (currentMenu == null || currentMenu.getSectionPosition(sec) < 0 || sec.getItemPosition(mi) < 0)
                 throw new UseCaseLogicException();
             if (position < 0 || position >= sec.getItemsCount())
-                throw new IllegalArgumentException();
+                throw new UseCaseLogicException();
             sec.moveItem(mi, position);
             this.notifySectionItemsRearranged(sec);
         }
@@ -271,9 +276,9 @@ public class MenuManager {
         }
     }
 
-    private void notifySectionsRearranged() {
+    private void notifySectionsRearranged(Menu m) {
         for (MenuEventReceiver er : this.eventReceivers) {
-            er.updateSectionsRearranged(this.currentMenu);
+            er.updateSectionsRearranged(m);
         }
     }
 
@@ -283,9 +288,9 @@ public class MenuManager {
         }
     }
 
-    private void notifySectionDeleted(Section s, boolean itemsDeleted) {
+    private void notifySectionDeleted(Menu m, Section s, boolean itemsDeleted) {
         for (MenuEventReceiver er : this.eventReceivers) {
-            er.updateSectionDeleted(this.currentMenu, s, itemsDeleted);
+            er.updateSectionDeleted(m, s, itemsDeleted);
         }
     }
 

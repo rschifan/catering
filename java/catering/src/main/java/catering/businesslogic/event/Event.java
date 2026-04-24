@@ -4,18 +4,15 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import catering.businesslogic.user.User;
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
-import catering.util.LogManager;
 
 /**
  * Represents an event in the catering system.
  */
 public class Event {
-    private static final Logger LOGGER = LogManager.getLogger(Event.class);
 
     private int id;
     private String name;
@@ -123,7 +120,6 @@ public class Event {
         // Get the ID of the newly inserted event
         id = PersistenceManager.getLastId();
 
-        LOGGER.info("Saved event: " + name + " (ID: " + id + ")");
     }
 
     public void updateEvent() {
@@ -134,7 +130,6 @@ public class Event {
 
         PersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId(), id);
 
-        LOGGER.info("Updated event: " + name + " (ID: " + id + ")");
     }
 
     public boolean deleteEvent() {
@@ -149,7 +144,6 @@ public class Event {
         boolean success = PersistenceManager.executeUpdate(query, id) > 0;
 
         if (success) {
-            LOGGER.info("Deleted event: " + name + " (ID: " + id + ")");
         }
 
         return success;

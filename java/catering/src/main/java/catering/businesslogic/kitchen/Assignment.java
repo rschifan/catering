@@ -98,13 +98,15 @@ public class Assignment {
 
                 shiftIds.add(rs.getInt("shift_id"));
                 taskIds.add(rs.getInt("task_id"));
-                cookIds.add(rs.getInt("cook_id"));
+                int cookId = rs.getInt("cook_id");
+                cookIds.add(rs.wasNull() ? null : cookId);
             }
         }, id); // Pass id as parameter
 
         for (int i = 0; i < shiftIds.size(); i++) {
             Assignment a = assignments.get(i);
-            a.cook = User.load(cookIds.get(i));
+            Integer cookId = cookIds.get(i);
+            a.cook = (cookId == null) ? null : User.load(cookId);
             a.task = KitchenTask.loadTaskById(taskIds.get(i));
             a.shift = Shift.loadItemById(shiftIds.get(i));
 
@@ -122,7 +124,7 @@ public class Assignment {
         String upd = "UPDATE Assignment SET shift_id = ?, cook_id = ? WHERE id = ?";
         PersistenceManager.executeUpdate(upd,
                 a.shift.getId(),
-                (a.cook == null ? 0 : a.cook.getId()),
+                (a.cook == null ? null : a.cook.getId()),
                 a.id);
     }
 
@@ -151,7 +153,12 @@ public class Assignment {
                 ps.setInt(1, id);
                 ps.setInt(2, assignmentList.get(batchCount).shift.getId());
                 ps.setInt(3, assignmentList.get(batchCount).task.getId());
-                ps.setInt(4, assignmentList.get(batchCount).cook.getId());
+                User cook = assignmentList.get(batchCount).cook;
+                if (cook == null) {
+                    ps.setNull(4, java.sql.Types.INTEGER);
+                } else {
+                    ps.setInt(4, cook.getId());
+                }
             }
 
             @Override
@@ -174,7 +181,7 @@ public class Assignment {
                 id,
                 a.shift.getId(),
                 a.task.getId(),
-                (a.cook == null ? 0 : a.cook.getId()));
+                (a.cook == null ? null : a.cook.getId()));
         a.id = PersistenceManager.getLastId();
 
     }

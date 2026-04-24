@@ -3,33 +3,29 @@ package catering.businesslogic.shift;
 import catering.businesslogic.user.User;
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
-import catering.util.LogManager;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Shift {
-    private static final Logger LOGGER = LogManager.getLogger(Shift.class);
 
     private int id;
     private Date date;
     private Time startTime;
     private Time endTime;
-    private Map<Integer, User> bookedUsers;
+    private Set<User> bookedUsers;
 
     private Shift() {
-        bookedUsers = new HashMap<>();
+        bookedUsers = new HashSet<>();
     }
 
     public Shift(Date date, Time startTime, Time endTime) {
         this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
-        bookedUsers = new HashMap<>();
+        bookedUsers = new HashSet<>();
     }
 
     /**
@@ -61,7 +57,6 @@ public class Shift {
         String query = "SELECT * FROM Shifts";
         ArrayList<Shift> shiftArrayList = new ArrayList<>();
 
-        LOGGER.info("Loading all shifts from database");
 
         PersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
@@ -86,7 +81,6 @@ public class Shift {
                         s.endTime = Time.valueOf(endTimeStr);
                     }
                 } catch (IllegalArgumentException ex) {
-                    LOGGER.log(Level.WARNING, "Error parsing date/time in Shift", ex);
                 }
 
                 s.bookedUsers = loadBookings(s);
@@ -108,7 +102,6 @@ public class Shift {
                 return 0;
         });
 
-        LOGGER.info("Loaded " + shiftArrayList.size() + " shifts");
         return shiftArrayList;
     }
 
@@ -116,7 +109,6 @@ public class Shift {
         String query = "SELECT * FROM Shifts WHERE id = ?";
         Shift[] shiftHolder = new Shift[1]; // Use array to allow modification in lambda
 
-        LOGGER.fine("Loading shift with ID " + id);
 
         PersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
@@ -141,7 +133,6 @@ public class Shift {
                         s.endTime = Time.valueOf(endTimeStr);
                     }
                 } catch (IllegalArgumentException ex) {
-                    LOGGER.log(Level.WARNING, "Error parsing date/time in Shift", ex);
                 }
 
                 shiftHolder[0] = s;
@@ -154,12 +145,11 @@ public class Shift {
             return s;
         }
 
-        LOGGER.warning("Shift with ID " + id + " not found");
         return null; // Return null if shift not found
     }
 
-    private static Map<Integer, User> loadBookings(Shift s) {
-        Map<Integer, User> bookings = new HashMap<>();
+    private static Set<User> loadBookings(Shift s) {
+        Set<User> bookings = new HashSet<>();
         String query = "SELECT user_id FROM ShiftBookings WHERE shift_id = ?";
 
         PersistenceManager.executeQuery(query, new ResultHandler() {
@@ -168,12 +158,11 @@ public class Shift {
                 int userId = rs.getInt("user_id");
                 User user = User.load(userId);
                 if (user != null) {
-                    bookings.put(userId, user);
+                    bookings.add(user);
                 }
             }
-        }, s.id); // Pass s.id as parameter
+        }, s.id);
 
-        LOGGER.fine("Loaded " + bookings.size() + " bookings for shift ID " + s.id);
         return bookings;
     }
 
@@ -182,7 +171,7 @@ public class Shift {
         s.date = date;
         s.startTime = startTime;
         s.endTime = endTime;
-        s.bookedUsers = new HashMap<>();
+        s.bookedUsers = new HashSet<>();
 
         String query = "INSERT INTO Shifts (date, start_time, end_time) VALUES (?, ?, ?)";
 
@@ -193,7 +182,6 @@ public class Shift {
 
         s.id = PersistenceManager.getLastId();
 
-        LOGGER.info("Created new shift ID " + s.id + " on " + s.date);
         return s;
     }
 
@@ -233,17 +221,14 @@ public class Shift {
         String query = "INSERT INTO ShiftBookings (shift_id, user_id) VALUES (?, ?)";
         PersistenceManager.executeUpdate(query, this.id, user.getId());
 
-        // Update local cache
-        bookedUsers.put(user.getId(), user);
+        bookedUsers.add(user);
     }
 
-    // Remove a booking from the database
     public void removeBooking(User user) {
         String query = "DELETE FROM ShiftBookings WHERE shift_id = ? AND user_id = ?";
         PersistenceManager.executeUpdate(query, this.id, user.getId());
 
-        // Update local cache
-        bookedUsers.remove(user.getId());
+        bookedUsers.remove(user);
     }
 
     // INSTANCE METHODS
@@ -261,47 +246,40 @@ public class Shift {
     }
 
     public void addBooking(User u) {
-        if (this.bookedUsers.containsKey(u.getId())) {
-            LOGGER.warning("User " + u.getUserName() + " is already booked for this shift");
+        if (this.bookedUsers.contains(u)) {
             return;
         }
 
         String query = "INSERT INTO ShiftBookings (shift_id, user_id) VALUES (?, ?)";
         PersistenceManager.executeUpdate(query, this.id, u.getId());
 
-        this.bookedUsers.put(u.getId(), u);
-        LOGGER.info("Added booking for user " + u.getUserName() + " to shift ID " + this.id);
+        this.bookedUsers.add(u);
     }
 
     public User removeBookedUser(User u) {
-        if (!this.bookedUsers.containsKey(u.getId())) {
-            LOGGER.warning("User " + u.getUserName() + " is not booked for this shift");
+        if (!this.bookedUsers.contains(u)) {
             return null;
         }
 
         String query = "DELETE FROM ShiftBookings WHERE shift_id = ? AND user_id = ?";
         int rowsAffected = PersistenceManager.executeUpdate(query, this.id, u.getId());
 
-        if (rowsAffected > 0) {
-            User removed = this.bookedUsers.remove(u.getId());
-            LOGGER.info("Removed booking for user " + u.getUserName() + " from shift ID " + this.id);
-            return removed;
-        } else {
-            LOGGER.warning("Failed to remove booking for user " + u.getUserName() + " from shift ID " + this.id);
-            return null;
+        if (rowsAffected > 0 && this.bookedUsers.remove(u)) {
+            return u;
         }
+        return null;
     }
 
     public boolean isBooked(User u) {
-        return bookedUsers.containsValue(u);
+        return bookedUsers.contains(u);
     }
 
     public int getId() {
         return id;
     }
 
-    public Map<Integer, User> getBookedUsers() {
-        return new HashMap<>(bookedUsers); // Return a copy to prevent modification
+    public Set<User> getBookedUsers() {
+        return new HashSet<>(bookedUsers);
     }
 
     public String toString() {
@@ -314,7 +292,7 @@ public class Shift {
                 .append(">");
 
         if (!bookedUsers.isEmpty()) {
-            for (User u : bookedUsers.values()) {
+            for (User u : bookedUsers) {
                 sb.append("\n\t - ").append(u.toString());
             }
         }

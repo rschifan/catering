@@ -3,13 +3,10 @@ package catering.businesslogic.event;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.menu.Menu;
 import catering.businesslogic.user.User;
-import catering.util.LogManager;
 
 /**
  * EventManager handles all operations related to events and services in the
@@ -19,7 +16,6 @@ import catering.util.LogManager;
  */
 public class EventManager {
 
-    private static final Logger LOGGER = LogManager.getLogger(EventManager.class);
 
     private ArrayList<EventReceiver> eventReceivers;
     private Event selectedEvent;
@@ -125,7 +121,6 @@ public class EventManager {
      */
     public Event createEvent(String name, Date dateStart, Date dateEnd, User chef) {
         try {
-            LOGGER.info("Creating new event '" + name + "' with chef " + chef.getUserName());
 
             Event event = new Event();
             event.setName(name);
@@ -133,25 +128,20 @@ public class EventManager {
             event.setDateEnd(dateEnd);
             event.setChef(chef);
 
-            // Save to database
-            event.saveNewEvent();
+            // Notify all receivers (EventPersistence will persist)
+            notifyEventCreated(event);
 
             // Set as selected event
             this.selectedEvent = event;
             this.currentService = null;
 
-            // Notify all receivers
-            notifyEventCreated(event);
-
             return event;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to create event '" + name + "'", e);
             return null;
         }
     }
 
     public void selectEvent(Event event) {
-        LOGGER.info("Selecting event '" + event.getName() + "' (ID: " + event.getId() + ")");
         this.selectedEvent = event;
         this.currentService = null;
     }
@@ -160,12 +150,10 @@ public class EventManager {
             throws UseCaseLogicException {
         if (selectedEvent == null) {
             String msg = "Cannot create service: no event selected";
-            LOGGER.warning(msg);
             throw new UseCaseLogicException(msg);
         }
 
         try {
-            LOGGER.info("Creating new service '" + name + "' for event '" + selectedEvent.getName() + "'");
 
             Service service = new Service();
             service.setName(name);
@@ -175,19 +163,15 @@ public class EventManager {
             service.setLocation(location);
             service.setEventId(selectedEvent.getId());
 
-            // Save to database
-            service.saveNewService();
+            // Notify all receivers (EventPersistence will persist)
+            notifyServiceCreated(service);
 
             // Add to event and set as current service
             selectedEvent.addService(service);
             this.currentService = service;
 
-            // Notify all receivers
-            notifyServiceCreated(service);
-
             return service;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to create service '" + name + "'", e);
             return null;
         }
     }
@@ -268,25 +252,14 @@ public class EventManager {
     public boolean deleteService(int serviceId) {
         try {
             if (selectedEvent == null) {
-                LOGGER.warning("Cannot delete service: no event selected");
                 return false;
             }
 
             Service serviceToDelete = findServiceById(serviceId);
             if (serviceToDelete == null) {
-                LOGGER.warning("Service with ID " + serviceId + " not found");
                 return false;
             }
 
-            LOGGER.info("Deleting service '" + serviceToDelete.getName() + "' (ID: " + serviceId + ")");
-
-            // Delete from database
-            boolean deleted = serviceToDelete.deleteService();
-
-            if (!deleted) {
-                LOGGER.warning("Database operation failed while deleting service " + serviceId);
-                return false;
-            }
 
             selectedEvent.removeService(serviceToDelete);
 
@@ -295,12 +268,11 @@ public class EventManager {
                 currentService = null;
             }
 
-            // Notify all receivers
+            // Notify all receivers (EventPersistence will delete from DB)
             notifyServiceDeleted(serviceToDelete);
 
             return true;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to delete service " + serviceId, e);
             return false;
         }
     }
@@ -315,19 +287,9 @@ public class EventManager {
         try {
             Event eventToDelete = Event.loadById(eventId);
             if (eventToDelete == null) {
-                LOGGER.warning("Event with ID " + eventId + " not found");
                 return false;
             }
 
-            LOGGER.info("Deleting event '" + eventToDelete.getName() + "' (ID: " + eventId + ")");
-
-            // Use the event's delete method instead of direct SQL
-            boolean deleted = eventToDelete.deleteEvent();
-
-            if (!deleted) {
-                LOGGER.warning("Database operation failed while deleting event " + eventId);
-                return false;
-            }
 
             // Clear references if this was the selected event
             if (selectedEvent != null && selectedEvent.getId() == eventId) {
@@ -335,12 +297,11 @@ public class EventManager {
                 currentService = null;
             }
 
-            // Notify all receivers
+            // Notify all receivers (EventPersistence will delete from DB)
             notifyEventDeleted(eventToDelete);
 
             return true;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to delete event " + eventId, e);
             return false;
         }
     }
@@ -354,21 +315,18 @@ public class EventManager {
     public void assignMenu(Menu menu) throws UseCaseLogicException {
         if (selectedEvent == null) {
             String msg = "Cannot assign menu: no event selected";
-            LOGGER.warning(msg);
             throw new UseCaseLogicException(msg);
         }
 
         if (currentService == null) {
             String msg = "Cannot assign menu: no service selected";
-            LOGGER.warning(msg);
             throw new UseCaseLogicException(msg);
         }
 
-        LOGGER.info("Assigning menu '" + menu.getTitle() + "' to service '" + currentService.getName() + "'");
 
-        currentService.assignMenuToService(menu);
+        currentService.setMenu(menu);
 
-        // Notify all receivers
+        // Notify all receivers (EventPersistence will persist)
         notifyMenuAssigned(currentService, menu);
     }
 

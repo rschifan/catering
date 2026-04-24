@@ -6,6 +6,7 @@ import catering.businesslogic.menu.MenuManager;
 import catering.businesslogic.recipe.RecipeManager;
 import catering.businesslogic.shift.ShiftManager;
 import catering.businesslogic.user.UserManager;
+import catering.persistence.EventPersistence;
 import catering.persistence.KitchenTaskPersistence;
 import catering.persistence.MenuPersistence;
 
@@ -28,6 +29,7 @@ public class CatERing {
 
     private MenuPersistence menuPersistence;
     private KitchenTaskPersistence kitchenTaskPersistence;
+    private EventPersistence eventPersistence;
 
     private CatERing() {
         menuMgr = new MenuManager();
@@ -35,13 +37,15 @@ public class CatERing {
         userMgr = new UserManager();
         eventMgr = new EventManager();
         kitchenTaskMgr = new KitchenTaskManager();
-        shiftMgr = new ShiftManager(); // Add this line to initialize ShiftManager
+        shiftMgr = new ShiftManager();
 
         menuPersistence = new MenuPersistence();
         kitchenTaskPersistence = new KitchenTaskPersistence();
+        eventPersistence = new EventPersistence();
 
         menuMgr.addEventReceiver(menuPersistence);
         kitchenTaskMgr.addEventReceiver(kitchenTaskPersistence);
+        eventMgr.addEventReceiver(eventPersistence);
     }
 
     public static void main(String[] args) {

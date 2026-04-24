@@ -31,6 +31,12 @@ public class Menu {
             FEATURE_NEEDS_KITCHEN
     };
 
+    public static HashMap<String, Boolean> defaultFeaturesMap() {
+        HashMap<String, Boolean> m = new HashMap<>();
+        for (String f : DEFAULT_FEATURES) m.put(f, false);
+        return m;
+    }
+
     public static void create(Menu m) {
 
         String query = "INSERT INTO Menus (title, owner_id, published) VALUES (?, ?, ?);";
@@ -235,23 +241,19 @@ public class Menu {
 
     private User owner;
 
-    public Menu(User owner, String title, String[] menuFeatures) {
+    public Menu(User owner, String title, HashMap<String, Boolean> menuFeatures) {
         this.id = 0;
         this.title = title;
         this.owner = owner;
         this.published = false;
         this.inUse = false;
-        this.features = new HashMap<String, Boolean>();
+        this.features = new HashMap<String, Boolean>(menuFeatures);
         this.sections = new ArrayList<Section>();
         this.freeItems = new ArrayList<MenuItem>();
-
-        for (String feature : menuFeatures) {
-            this.features.put(feature, false);
-        }
     }
 
     public Menu(User owner, String title) {
-        this(owner, title, DEFAULT_FEATURES);
+        this(owner, title, defaultFeaturesMap());
     }
 
     private Menu() {
@@ -406,7 +408,7 @@ public class Menu {
         return allItems;
     }
 
-    public ArrayList<KitchenProcess> getKitchenProcesses() {
+    public ArrayList<KitchenProcess> getNeededKitchenProcesses() {
         ArrayList<KitchenProcess> allKitchenProcesses = new ArrayList<>();
 
         for (MenuItem item : this.getItems()) {
@@ -544,13 +546,10 @@ public class Menu {
 
     public Menu deepCopy() {
 
-        Menu copy = new Menu(this.owner, this.title, DEFAULT_FEATURES);
+        Menu copy = new Menu(this.owner, this.title, this.features);
 
         copy.published = this.published;
         copy.inUse = this.inUse;
-
-        for (Map.Entry<String, Boolean> entry : this.features.entrySet())
-            copy.features.put(entry.getKey(), entry.getValue());
 
         for (Section sec : this.sections)
             copy.sections.add(sec.deepCopy());

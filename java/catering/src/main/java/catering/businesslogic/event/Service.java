@@ -3,19 +3,16 @@ package catering.businesslogic.event;
 import java.sql.*;
 import java.util.*;
 import java.sql.Date;
-import java.util.logging.Logger;
 
 import catering.businesslogic.menu.Menu;
 import catering.businesslogic.menu.MenuItem;
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
-import catering.util.LogManager;
 
 /**
  * Represents a service in an event in the catering system.
  */
 public class Service {
-    private static final Logger LOGGER = LogManager.getLogger(Service.class);
 
     private int id;
     private String name;
@@ -246,7 +243,6 @@ public class Service {
                         s.timeEnd = Time.valueOf(endTimeStr);
                     }
                 } catch (IllegalArgumentException ex) {
-                    LOGGER.warning("Error parsing date/time in service: " + s.name);
                 }
 
                 s.location = rs.getString("location");
@@ -257,7 +253,6 @@ public class Service {
                     try {
                         s.menu = Menu.load(menuId);
                     } catch (Exception e) {
-                        LOGGER.warning("Failed to load menu (id: " + menuId + ") for service: " + s.name);
                     }
                 }
 
