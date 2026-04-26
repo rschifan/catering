@@ -51,7 +51,7 @@ public class KitchenTaskManager {
         SummarySheet newSummarySheet = new SummarySheet(service, user);
 
         service.getMenu().getNeededKitchenProcesses()
-                .forEach(kp -> newSummarySheet.addTask(new KitchenTask(kp, kp.getName())));
+                .forEach(kp -> newSummarySheet.addTask(new KitchenTask(kp)));
 
         this.setCurrentSummarySheet(newSummarySheet);
         this.notifySheetGenerated(newSummarySheet);

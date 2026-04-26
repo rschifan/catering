@@ -48,7 +48,7 @@ public class MenuManager {
 
         Section newSection = this.currentMenu.addSection(name);
 
-        this.notifySectionAdded(this.currentMenu, newSection);
+        this.notifySectionAdded(newSection);
 
         return newSection;
     }
@@ -105,6 +105,7 @@ public class MenuManager {
         if (m.isInUse() || !m.isOwner(u)) {
             throw new UseCaseLogicException("Menu is in use or user is not owner");
         }
+        this.setCurrentMenu(null);
         this.notifyMenuDeleted(m);
     }
 
@@ -324,9 +325,9 @@ public class MenuManager {
         }
     }
 
-    private void notifySectionAdded(Menu m, Section sec) {
+    private void notifySectionAdded(Section sec) {
         for (MenuEventReceiver er : this.eventReceivers) {
-            er.updateSectionAdded(m, sec);
+            er.updateSectionAdded(this.currentMenu, sec);
         }
     }
 
