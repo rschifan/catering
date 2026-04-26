@@ -118,9 +118,9 @@ public class KitchenTask {
         for (int i = 0; i < recipeIds.size(); i++) {
             KitchenTask t = taskArrayList.get(i);
             if (types.get(i)) {
-                t.kitchenProcess = Recipe.loadRecipe(recipeIds.get(i));
+                t.kitchenProcess = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadRecipe(recipeIds.get(i));
             } else {
-                t.kitchenProcess = Preparation.loadPreparationById(recipeIds.get(i));
+                t.kitchenProcess = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadPreparation(recipeIds.get(i));
             }
 
         }
@@ -162,9 +162,9 @@ public class KitchenTask {
 
         KitchenTask t = taskHolder[0];
         if (types.get(0)) {
-            t.kitchenProcess = Recipe.loadRecipe(ids.get(0));
+            t.kitchenProcess = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadRecipe(ids.get(0));
         } else {
-            t.kitchenProcess = Preparation.loadPreparationById(ids.get(0));
+            t.kitchenProcess = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadPreparation(ids.get(0));
         }
 
         return t;

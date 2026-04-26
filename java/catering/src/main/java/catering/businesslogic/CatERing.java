@@ -10,9 +10,13 @@ import catering.persistence.KitchenTaskPersistence;
 import catering.persistence.MenuPersistence;
 import catering.persistence.strategy.MenuItemPersister;
 import catering.persistence.strategy.MenuPersister;
+import catering.persistence.strategy.PreparationPersister;
+import catering.persistence.strategy.RecipePersister;
 import catering.persistence.strategy.SectionPersister;
 import catering.persistence.strategy.impl.SQLiteMenuItemPersister;
 import catering.persistence.strategy.impl.SQLiteMenuPersister;
+import catering.persistence.strategy.impl.SQLitePreparationPersister;
+import catering.persistence.strategy.impl.SQLiteRecipePersister;
 import catering.persistence.strategy.impl.SQLiteSectionPersister;
 
 public class CatERing {
@@ -37,12 +41,17 @@ public class CatERing {
 
     private CatERing() {
         // Strategy composition: build leaf persisters first, then composite ones.
-        MenuItemPersister menuItemPersister = new SQLiteMenuItemPersister();
+        // Recipe-side: Preparation has no associations, Recipe composes Preparation.
+        PreparationPersister preparationPersister = new SQLitePreparationPersister();
+        RecipePersister recipePersister = new SQLiteRecipePersister(preparationPersister);
+
+        // Menu-side: MenuItem references Recipe; Section composes MenuItem; Menu composes both.
+        MenuItemPersister menuItemPersister = new SQLiteMenuItemPersister(recipePersister);
         SectionPersister sectionPersister = new SQLiteSectionPersister(menuItemPersister);
         MenuPersister menuPersister = new SQLiteMenuPersister(sectionPersister, menuItemPersister);
 
         menuMgr = new MenuManager(menuPersister);
-        recipeMgr = new RecipeManager();
+        recipeMgr = new RecipeManager(recipePersister, preparationPersister);
         userMgr = new UserManager();
         eventMgr = new EventManager();
         kitchenTaskMgr = new KitchenTaskManager();

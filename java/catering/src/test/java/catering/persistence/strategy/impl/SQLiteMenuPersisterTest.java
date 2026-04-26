@@ -42,8 +42,13 @@ public class SQLiteMenuPersisterTest {
 
     @BeforeAll
     public void setUpOnce() {
-        // Initialize the persister composition (Strategy injection)
-        MenuItemPersister itemPersister = new SQLiteMenuItemPersister();
+        // Initialize the persister composition (Strategy injection).
+        // Wire leaves first, then composites: Preparation → Recipe → MenuItem → Section → Menu.
+        catering.persistence.strategy.PreparationPersister prepPersister =
+                new SQLitePreparationPersister();
+        catering.persistence.strategy.RecipePersister recipePersister =
+                new SQLiteRecipePersister(prepPersister);
+        MenuItemPersister itemPersister = new SQLiteMenuItemPersister(recipePersister);
         SectionPersister sectionPersister = new SQLiteSectionPersister(itemPersister);
         persister = new SQLiteMenuPersister(sectionPersister, itemPersister);
 
@@ -53,8 +58,8 @@ public class SQLiteMenuPersisterTest {
         assertTrue(testChef.isChef(), "Test user must have chef role");
 
         // Load test recipes
-        bruschetta = Recipe.loadRecipe(1);
-        caprese = Recipe.loadRecipe(2);
+        bruschetta = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadRecipe(1);
+        caprese = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadRecipe(2);
 
         assertNotNull(bruschetta, "Test setup failed: recipe not found in database");
         assertNotNull(caprese, "Test setup failed: recipe not found in database");

@@ -6,12 +6,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import catering.businesslogic.menu.MenuItem;
-import catering.businesslogic.recipe.Recipe;
 import catering.persistence.ResultHandler;
 import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.strategy.MenuItemPersister;
+import catering.persistence.strategy.RecipePersister;
 
 public class SQLiteMenuItemPersister implements MenuItemPersister {
+
+    private final RecipePersister recipePersister;
+
+    public SQLiteMenuItemPersister(RecipePersister recipePersister) {
+        this.recipePersister = recipePersister;
+    }
 
     // Organize SQL queries by operation type
     private static final class SQL {
@@ -74,7 +80,7 @@ public class SQLiteMenuItemPersister implements MenuItemPersister {
             recipeId[0] = rs.getInt("recipe_id");
         }, id);
         if (holder[0] != null) {
-            holder[0].setRecipe(Recipe.loadRecipe(recipeId[0]));
+            holder[0].setRecipe(recipePersister.load(recipeId[0]));
         }
         return holder[0];
     }
@@ -91,7 +97,7 @@ public class SQLiteMenuItemPersister implements MenuItemPersister {
             recids.add(rs.getInt("recipe_id"));
         });
         for (int i = 0; i < result.size(); i++) {
-            result.get(i).setRecipe(Recipe.loadRecipe(recids.get(i)));
+            result.get(i).setRecipe(recipePersister.load(recids.get(i)));
         }
         return result;
     }
@@ -112,7 +118,7 @@ public class SQLiteMenuItemPersister implements MenuItemPersister {
         }, menuId, sectionId);
 
         for (int i = 0; i < result.size(); i++) {
-            result.get(i).setRecipe(Recipe.loadRecipe(recids.get(i)));
+            result.get(i).setRecipe(recipePersister.load(recids.get(i)));
         }
 
         return result;

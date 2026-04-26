@@ -1,30 +1,24 @@
 package catering.businesslogic.recipe;
 
-import catering.persistence.SQLitePersistenceManager;
-import catering.persistence.ResultHandler;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Leaf of the kitchen-process Composite hierarchy.
+ * Leaf of the kitchen-process Composite hierarchy. Pure domain class —
+ * persistence is owned by
+ * {@link catering.persistence.strategy.PreparationPersister} (Strategy pattern,
+ * wired in {@link catering.businesslogic.CatERing}).
  */
 public class Preparation extends KitchenProcessComponent {
 
-    /**
-     * Default constructor for loading from DB
-     */
-    private Preparation() {
+    public Preparation(String name) {
+        super();
+        this.name = name;
     }
 
-    /**
-     * Creates a new preparation with the given name
-     *
-     * @param name The preparation name
-     */
-    public Preparation(String name) {
-        this.id = 0;
-        this.name = name;
+    /** Hydration constructor used by the persister. */
+    public Preparation(int id, String name, String description) {
+        super(id, name, description);
     }
 
     @Override
@@ -40,118 +34,5 @@ public class Preparation extends KitchenProcessComponent {
     @Override
     public List<KitchenProcessComponent> getChildren() {
         return Collections.emptyList();
-    }
-
-    /**
-     * Loads all preparations from the database
-     *
-     * @return List of all preparations
-     */
-    public static ArrayList<Preparation> loadAllPreparations() {
-        ArrayList<Preparation> preparations = new ArrayList<>();
-
-        String query = "SELECT * FROM Preparations";
-        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                Preparation prep = new Preparation(rs.getString("name"));
-                prep.id = rs.getInt("id");
-
-                prep.description = rs.getString("description");
-
-                preparations.add(prep);
-            }
-        });
-
-        return preparations;
-    }
-
-    /**
-     * Gets all preparations from the database
-     *
-     * @return List of all preparations
-     */
-    public static ArrayList<Preparation> getAllPreparations() {
-        return loadAllPreparations();
-    }
-
-    /**
-     * Loads a preparation by its ID
-     *
-     * @param id The preparation ID
-     * @return The loaded preparation or null if not found
-     */
-    public static Preparation loadPreparationById(int id) {
-        Preparation[] prepHolder = new Preparation[1]; // Use array to allow modification in lambda
-        String query = "SELECT * FROM Preparations WHERE id = ?";
-
-        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                Preparation prep = new Preparation();
-                prep.name = rs.getString("name");
-                prep.id = id;
-                prep.description = rs.getString("description");
-                prepHolder[0] = prep;
-            }
-        }, id); // Pass id as parameter
-
-        return prepHolder[0];
-    }
-
-    /**
-     * Saves a new preparation to the database
-     *
-     * @return true if successful, false otherwise
-     */
-    public boolean save() {
-        if (id != 0)
-            return false; // Already exists
-
-        String query = "INSERT INTO Preparations (name, description) VALUES(?, ?)";
-
-        id = SQLitePersistenceManager.executeInsert(query, name, description);
-        return true;
-    }
-
-    /**
-     * Updates an existing preparation in the database
-     *
-     * @return true if successful, false otherwise
-     */
-    public boolean update() {
-        if (id == 0)
-            return false; // Not in DB
-
-        String query = "UPDATE Preparations SET name = ?, description = ? WHERE id = ?";
-
-        int rows = SQLitePersistenceManager.executeUpdate(query, name, description, id);
-        return rows > 0;
-    }
-
-    /**
-     * Gets recipes that use this preparation
-     *
-     * @return List of recipes using this preparation
-     */
-    public List<Recipe> getUsedInRecipes() {
-        List<Recipe> result = new ArrayList<>();
-
-        if (id == 0)
-            return result; // Not in DB
-
-        String query = "SELECT recipe_id FROM RecipePreparations WHERE preparation_id = ?";
-        SQLitePersistenceManager.executeQuery(query, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                int recipeId = rs.getInt("recipe_id");
-                Recipe recipe = Recipe.loadRecipe(recipeId);
-                if (recipe != null) {
-                    result.add(recipe);
-                }
-            }
-        }, id); // Pass id as parameter
-
-        return result;
     }
 }
