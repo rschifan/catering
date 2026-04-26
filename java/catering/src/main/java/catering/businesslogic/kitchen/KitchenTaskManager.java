@@ -3,6 +3,7 @@ package catering.businesslogic.kitchen;
 import java.util.ArrayList;
 
 import catering.businesslogic.CatERing;
+import catering.businesslogic.Preconditions;
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.event.Event;
 import catering.businesslogic.event.Service;
@@ -25,9 +26,7 @@ public class KitchenTaskManager {
     public SummarySheet generateSummarySheet(Event event, Service service) throws UseCaseLogicException {
 
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
-
-        if (!user.isChef())
-            throw new UseCaseLogicException("User is not a chef");
+        Preconditions.requireChef(user);
 
         if (event == null)
             throw new UseCaseLogicException("Event not specified");
@@ -58,8 +57,7 @@ public class KitchenTaskManager {
 
     public SummarySheet openSumSheet(SummarySheet ss) throws UseCaseLogicException, SummarySheetException {
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
-        if (!user.isChef())
-            throw new UseCaseLogicException();
+        Preconditions.requireChef(user);
         if (!ss.isOwner(user))
             throw new SummarySheetException("User: " + user.getUserName() + " is not owner of the SummarySheet");
         setCurrentSumSheet(ss);
@@ -72,8 +70,9 @@ public class KitchenTaskManager {
     }
 
     public void moveTask(KitchenTask t, int pos) throws UseCaseLogicException {
-        if (currentSumSheet == null || currentSumSheet.getTaskPosition(t) < 0)
-            throw new UseCaseLogicException();
+        Preconditions.requireCurrentSummarySheet(currentSumSheet);
+        if (currentSumSheet.getTaskPosition(t) < 0)
+            throw new UseCaseLogicException("precondition: task must belong to the current summary sheet");
         if (pos < 0 || pos >= currentSumSheet.getTaskListSize())
             throw new IllegalArgumentException();
         this.currentSumSheet.moveTask(t, pos);
@@ -83,8 +82,7 @@ public class KitchenTaskManager {
 
     public void addTaskInformation(KitchenTask task, int quantity, int portions, long minutes)
             throws SummarySheetException, UseCaseLogicException {
-        if (currentSumSheet == null)
-            throw new UseCaseLogicException();
+        Preconditions.requireCurrentSummarySheet(currentSumSheet);
         if (currentSumSheet.getTaskPosition(task) < 0)
             throw new SummarySheetException("Task not found in this SummarySheet");
         if (quantity < 0)
@@ -104,9 +102,7 @@ public class KitchenTaskManager {
     }
 
     public Assignment assignTask(KitchenTask t, Shift s, User cook) throws UseCaseLogicException {
-        if (currentSumSheet == null) {
-            throw new UseCaseLogicException("Cannot assign task because there is no active summary sheet.");
-        }
+        Preconditions.requireCurrentSummarySheet(currentSumSheet);
         if (!currentSumSheet.containsTask(t)) {
             throw new UseCaseLogicException("Task does not belong to the current summary sheet.");
         }
@@ -135,15 +131,13 @@ public class KitchenTaskManager {
 
     public void modifyAssignment(Assignment ass, Shift shift, User cook)
             throws UseCaseLogicException, SummarySheetException {
-        Assignment a;
+        Preconditions.requireCurrentSummarySheet(currentSumSheet);
+        if (cook != null && !shift.isBooked(cook)) {
+            throw new UseCaseLogicException(
+                    "Cook " + cook.getUserName() + " is not booked on the selected shift.");
+        }
 
-        if (currentSumSheet == null)
-            throw new UseCaseLogicException();
-        if (cook == null || shift.isBooked(cook))
-            a = currentSumSheet.modifyAssignment(ass, shift, cook);
-        else
-            throw new UseCaseLogicException();
-
+        Assignment a = currentSumSheet.modifyAssignment(ass, shift, cook);
         notifyAssignmentChanged(a);
     }
 

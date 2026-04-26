@@ -72,44 +72,20 @@ public class CatERing {
         return shiftMgr;
     }
 
-    public void setShiftManager(ShiftManager shiftMgr) {
-        this.shiftMgr = shiftMgr;
-    }
-
     public MenuManager getMenuManager() {
         return menuMgr;
-    }
-
-    public void setMenuManager(MenuManager menuMgr) {
-        this.menuMgr = menuMgr;
     }
 
     public RecipeManager getRecipeManager() {
         return recipeMgr;
     }
 
-    public void setRecipeManager(RecipeManager recipeMgr) {
-        this.recipeMgr = recipeMgr;
-    }
-
     public UserManager getUserManager() {
         return userMgr;
     }
 
-    public void setUserManager(UserManager userMgr) {
-        this.userMgr = userMgr;
-    }
-
     public EventManager getEventManager() {
         return eventMgr;
-    }
-
-    public void setEventManager(EventManager eventMgr) {
-        this.eventMgr = eventMgr;
-    }
-
-    public void setKitchenTaskManager(KitchenTaskManager kitchenTaskMgr) {
-        this.kitchenTaskMgr = kitchenTaskMgr;
     }
 
 }
