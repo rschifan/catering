@@ -119,10 +119,7 @@ public class Event {
         Long startTimestamp = (dateStart != null) ? dateStart.getTime() : null;
         Long endTimestamp = (dateEnd != null) ? dateEnd.getTime() : null;
 
-        SQLitePersistenceManager.executeUpdate(query, name, startTimestamp, endTimestamp, getChefId());
-
-        // Get the ID of the newly inserted event
-        id = SQLitePersistenceManager.getLastId();
+        id = SQLitePersistenceManager.executeInsert(query, name, startTimestamp, endTimestamp, getChefId());
 
         LOGGER.info("Saved event: " + name + " (ID: " + id + ")");
     }

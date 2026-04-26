@@ -170,13 +170,11 @@ public class Assignment {
      */
     public static void saveNewAssignment(int id, Assignment a) {
         String query = "INSERT INTO Assignment (sumsheet_id, shift_id, task_id, cook_id) VALUES (?, ?, ?, ?)";
-        SQLitePersistenceManager.executeUpdate(query,
+        a.id = SQLitePersistenceManager.executeInsert(query,
                 id,
                 a.shift.getId(),
                 a.task.getId(),
                 (a.cook == null ? 0 : a.cook.getId()));
-        a.id = SQLitePersistenceManager.getLastId();
-
     }
 
     @Override

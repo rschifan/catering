@@ -214,6 +214,7 @@ public class SummarySheet {
     public KitchenTask addTaskInformation(KitchenTask task, int quantity, int portions, long minutes) {
         task.setQuantity(quantity);
         task.setPortions(portions);
+        task.setMinutes(minutes);
 
         return task;
     }

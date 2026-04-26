@@ -39,24 +39,17 @@ public class SQLiteMenuItemPersister implements MenuItemPersister {
     }
 
     public void insert(int menuId, int sectionId, MenuItem item, int position) {
-        SQLitePersistenceManager.executeUpdate(
+        item.setId(SQLitePersistenceManager.executeInsert(
                 SQL.INSERT_MENU_ITEM,
                 menuId,
                 sectionId,
                 item.getDescription(),
                 item.getRecipe().getId(),
-                position);
-
-        item.setId(SQLitePersistenceManager.getLastId());
+                position));
     }
 
     public void update(int sectionId, MenuItem item) {
         SQLitePersistenceManager.executeUpdate(SQL.UPDATE_MENU_ITEM_SECTION, sectionId, item.getId());
-    }
-
-    @Override
-    public int insert(MenuItem item) {
-        throw new UnsupportedOperationException("Unimplemented method 'insert'");
     }
 
     @Override

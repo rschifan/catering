@@ -19,6 +19,7 @@ public class KitchenTask {
     private KitchenProcessComponent kitchenProcess;
     private int quantity;
     private int portions;
+    private long minutes;
     private boolean ready;
     private boolean type;
 
@@ -37,6 +38,7 @@ public class KitchenTask {
         ready = false;
         quantity = 0;
         portions = 0;
+        minutes = 0;
     }
 
     public KitchenTask(KitchenTask mi) {
@@ -49,7 +51,7 @@ public class KitchenTask {
     // STATIC METHODS FOR PERSISTENCE
 
     public static void saveAllNewTasks(int id, ArrayList<KitchenTask> taskList) {
-        String secInsert = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+        String secInsert = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions, minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         SQLitePersistenceManager.executeBatchUpdate(secInsert, taskList.size(), new BatchUpdateHandler() {
             @Override
@@ -62,6 +64,7 @@ public class KitchenTask {
                 ps.setBoolean(6, taskList.get(batchCount).ready);
                 ps.setInt(7, taskList.get(batchCount).quantity);
                 ps.setInt(8, taskList.get(batchCount).portions);
+                ps.setLong(9, taskList.get(batchCount).minutes);
             }
 
             @Override
@@ -73,9 +76,9 @@ public class KitchenTask {
     }
 
     public static void saveNewTask(int id, KitchenTask task, int taskPosition) {
-        String query = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO Tasks (sumsheet_id, kitchenproc_id, description, type, position, ready, quantity, portions, minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        SQLitePersistenceManager.executeUpdate(query,
+        task.id = SQLitePersistenceManager.executeInsert(query,
                 id,
                 task.kitchenProcess.getId(),
                 task.getDescription(),
@@ -83,10 +86,8 @@ public class KitchenTask {
                 taskPosition,
                 task.ready,
                 task.quantity,
-                task.portions);
-
-        task.id = SQLitePersistenceManager.getLastId();
-
+                task.portions,
+                task.minutes);
     }
 
     public static ArrayList<KitchenTask> loadAllTasksBySumSheetId(int id) {
@@ -106,6 +107,7 @@ public class KitchenTask {
                 t.portions = rs.getInt("portions");
                 t.ready = rs.getBoolean("ready");
                 t.quantity = rs.getInt("quantity");
+                t.minutes = rs.getLong("minutes");
                 recipeIds.add(rs.getInt("kitchenproc_id")); // Changed from kitchen_proc_id
                 types.add(rs.getBoolean("type"));
                 taskArrayList.add(t);
@@ -144,6 +146,7 @@ public class KitchenTask {
                 t.portions = rs.getInt("portions");
                 t.ready = rs.getBoolean("ready");
                 t.quantity = rs.getInt("quantity");
+                t.minutes = rs.getLong("minutes");
 
                 t.type = rs.getBoolean("type");
                 ids.add(rs.getInt("kitchenproc_id")); // Changed from kitchen_proc_id
@@ -167,12 +170,13 @@ public class KitchenTask {
     }
 
     public static void updateTaskChanged(KitchenTask task) {
-        String query = "UPDATE Tasks SET description = ?, quantity = ?, portions = ?, ready = ? WHERE id = ?";
+        String query = "UPDATE Tasks SET description = ?, quantity = ?, portions = ?, minutes = ?, ready = ? WHERE id = ?";
 
         SQLitePersistenceManager.executeUpdate(query,
                 task.getDescription(),
                 task.quantity,
                 task.portions,
+                task.minutes,
                 task.ready,
                 task.id);
     }
@@ -187,6 +191,14 @@ public class KitchenTask {
 
     public void setPortions(int portions) {
         this.portions = portions;
+    }
+
+    public void setMinutes(long minutes) {
+        this.minutes = minutes;
+    }
+
+    public long getMinutes() {
+        return minutes;
     }
 
     public int getId() {

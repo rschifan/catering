@@ -3,26 +3,25 @@ package catering.businesslogic.menu;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
-import catering.businesslogic.recipe.Recipe;
+import catering.businesslogic.CatERing;
 import catering.businesslogic.user.User;
 
 public class MenuTest {
 
     private Menu testMenu;
     private User testOwner;
-    private Recipe testRecipe;
+
+    @BeforeAll
+    public static void initRuntime() {
+        CatERing.getInstance();
+    }
 
     @BeforeEach
     public void setUp() {
-        // Create test user with chef role
         testOwner = new User("TestChef");
         testOwner.addRole(User.Role.CHEF);
 
-        // Create test menu
         testMenu = Menu.create(testOwner, "Test Menu");
-
-        // Mock a test recipe
-        testRecipe = Recipe.loadRecipe(1); // Assuming recipe ID 1 exists in test DB
     }
 
     @Test

@@ -186,12 +186,10 @@ public class Shift {
 
         String query = "INSERT INTO Shifts (date, start_time, end_time) VALUES (?, ?, ?)";
 
-        SQLitePersistenceManager.executeUpdate(query,
+        s.id = SQLitePersistenceManager.executeInsert(query,
                 s.date,
                 s.startTime,
                 s.endTime);
-
-        s.id = SQLitePersistenceManager.getLastId();
 
         LOGGER.info("Created new shift ID " + s.id + " on " + s.date);
         return s;
@@ -205,12 +203,10 @@ public class Shift {
         }
 
         String query = "INSERT INTO Shifts (date, start_time, end_time) VALUES (?, ?, ?)";
-        SQLitePersistenceManager.executeUpdate(query,
+        this.id = SQLitePersistenceManager.executeInsert(query,
                 date.toString(),
                 startTime.toString(),
                 endTime.toString());
-
-        this.id = SQLitePersistenceManager.getLastId();
     }
 
     // Update an existing shift

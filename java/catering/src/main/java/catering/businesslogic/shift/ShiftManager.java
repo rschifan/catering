@@ -42,7 +42,7 @@ public class ShiftManager {
      * @return true if the user is available (not booked) for the shift
      */
     public boolean isAvailable(User u, Shift s) {
-        return s.isBooked(u);
+        return !s.isBooked(u);
     }
 
     /**

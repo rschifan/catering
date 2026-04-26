@@ -107,8 +107,8 @@ public class KitchenTaskManager {
         if (currentSumSheet == null) {
             throw new UseCaseLogicException("Cannot assign task because there is no active summary sheet.");
         }
-        if (cook != null && !CatERing.getInstance().getShiftManager().isAvailable(cook, s)) {
-            throw new UseCaseLogicException("Cook " + cook.getUserName() + " is not available for the selected shift.");
+        if (cook != null && !s.isBooked(cook)) {
+            throw new UseCaseLogicException("Cook " + cook.getUserName() + " is not booked on the selected shift.");
         }
         Assignment a = currentSumSheet.addAssignment(t, s, cook);
         this.notifyAssignmentAdded(a);
@@ -136,7 +136,7 @@ public class KitchenTaskManager {
 
         if (currentSumSheet == null)
             throw new UseCaseLogicException();
-        if (cook == null || CatERing.getInstance().getShiftManager().isAvailable(cook, shift))
+        if (cook == null || shift.isBooked(cook))
             a = currentSumSheet.modifyAssignment(ass, shift, cook);
         else
             throw new UseCaseLogicException();

@@ -168,6 +168,7 @@ CREATE TABLE
         `quantity` REAL DEFAULT NULL,
         `position` INTEGER NOT NULL DEFAULT 0,
         `portions` INTEGER DEFAULT NULL,
+        `minutes` INTEGER DEFAULT 0,
         `ready` INTEGER DEFAULT 0,
         FOREIGN KEY (`sumsheet_id`) REFERENCES `SummarySheets` (`id`),
         FOREIGN KEY (`kitchenproc_id`) REFERENCES `Recipes` (`id`)

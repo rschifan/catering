@@ -206,8 +206,7 @@ public class User {
 
         String query = "INSERT INTO Users (username) VALUES(?)";
 
-        SQLitePersistenceManager.executeUpdate(query, username);
-        id = SQLitePersistenceManager.getLastId();
+        id = SQLitePersistenceManager.executeInsert(query, username);
 
         if (id > 0) {
             // Save roles
@@ -273,27 +272,24 @@ public class User {
 
         // Then insert new roles
         for (Role role : roles) {
-            String roleId = getRoleStringId(role);
+            int roleId = getRoleId(role);
             String insertQuery = "INSERT INTO UserRoles (user_id, role_id) VALUES(?, ?)";
             SQLitePersistenceManager.executeUpdate(insertQuery, id, roleId);
         }
     }
 
-    /**
-     * Converts Role enum to string ID for database
-     */
-    private String getRoleStringId(Role role) {
+    private int getRoleId(Role role) {
         switch (role) {
             case CUOCO:
-                return "c";
+                return 0;
             case CHEF:
-                return "h";
+                return 1;
             case ORGANIZZATORE:
-                return "o";
+                return 2;
             case SERVIZIO:
-                return "s";
+                return 3;
             default:
-                return "";
+                throw new IllegalArgumentException("Unknown role: " + role);
         }
     }
 
