@@ -108,8 +108,9 @@ public class KitchenTask {
                 t.ready = rs.getBoolean("ready");
                 t.quantity = rs.getInt("quantity");
                 t.minutes = rs.getLong("minutes");
-                recipeIds.add(rs.getInt("kitchenproc_id")); // Changed from kitchen_proc_id
-                types.add(rs.getBoolean("type"));
+                t.type = rs.getBoolean("type");
+                recipeIds.add(rs.getInt("kitchenproc_id"));
+                types.add(t.type);
                 taskArrayList.add(t);
             }
         }, id); // Pass id as parameter

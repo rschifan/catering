@@ -176,6 +176,10 @@ public class SummarySheet {
         return taskList;
     }
 
+    public boolean containsTask(KitchenTask t) {
+        return taskList.contains(t);
+    }
+
     public Assignment addAssignment(KitchenTask t, Shift s, User cook) {
         Assignment ass = new Assignment(t, s, cook);
         assignmentList.add(ass);

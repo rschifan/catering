@@ -161,8 +161,10 @@ CREATE TABLE
     `Tasks` (
         `id` INTEGER PRIMARY KEY AUTOINCREMENT,
         `sumsheet_id` INTEGER NOT NULL,
+        -- kitchenproc_id references either Recipes.id or Preparations.id,
+        -- discriminated by the `type` column (1 = Recipe, 0 = Preparation).
+        -- No FK constraint is declared because the target table varies.
         `kitchenproc_id` INTEGER NOT NULL,
-        `preparation_id` INTEGER DEFAULT NULL,
         `description` TEXT,
         `type` INTEGER NOT NULL DEFAULT 1,
         `quantity` REAL DEFAULT NULL,
@@ -170,8 +172,7 @@ CREATE TABLE
         `portions` INTEGER DEFAULT NULL,
         `minutes` INTEGER DEFAULT 0,
         `ready` INTEGER DEFAULT 0,
-        FOREIGN KEY (`sumsheet_id`) REFERENCES `SummarySheets` (`id`),
-        FOREIGN KEY (`kitchenproc_id`) REFERENCES `Recipes` (`id`)
+        FOREIGN KEY (`sumsheet_id`) REFERENCES `SummarySheets` (`id`)
     );
 
 CREATE TABLE

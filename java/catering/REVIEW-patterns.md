@@ -50,7 +50,7 @@ The Composite fix removed the `if (p.isRecipe())` structural guard, but `Kitchen
 
 ### 1.5 Composite shape — already aligned — **OK** (post-fix §0)
 
-After the recent fix, `KitchenProcessComponent` matches the prof's safety variant. One residual: the project DCD (`catering/umlet/dcdACnew.uxf`) still labels the type as `«interface» KitchenProcess`. The label needs updating to `KitchenProcessComponent` (abstract class) for code/diagram consistency — but the diagram is out-of-scope for this work per the original plan.
+After the recent fix, `KitchenProcessComponent` matches the prof's reference shape: a single abstract class as the root with structural operations declared on the root, and `Preparation` (leaf) overriding them to throw. This is the **transparent variant** (`teoria/JavaGoF/src/strutturali/composite/structure_abstractclass/Component.java:8` declares `add`/`remove`/`getChild` on the root — that is transparency, not safety). The fix happens to use a *checked* exception (`KitchenProcessException`) on the leaf overrides, which is closer to the safety spirit, but the API is transparent. One residual: the project DCD (`catering/umlet/dcdACnew.uxf`) still labels the type as `«interface» KitchenProcess`. The label needs updating to `KitchenProcessComponent` (abstract class) for code/diagram consistency — but the diagram is out-of-scope for this work per the original plan.
 
 ### 1.6 Singleton — already aligned — **OK** (post-fix §0)
 

@@ -64,30 +64,35 @@ public class SQLiteMenuItemPersister implements MenuItemPersister {
 
     @Override
     public MenuItem load(int id) {
-        String queryString = SQL.SELECT_MENU_ITEM;
-        MenuItem item = MenuItem.create();
-        SQLitePersistenceManager.executeQuery(queryString, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                item.setId(rs.getInt("id"));
-                item.setDescription(rs.getString("description"));
-            }
+        MenuItem[] holder = new MenuItem[1];
+        int[] recipeId = new int[1];
+        SQLitePersistenceManager.executeQuery(SQL.SELECT_MENU_ITEM, rs -> {
+            MenuItem item = MenuItem.create();
+            item.setId(rs.getInt("id"));
+            item.setDescription(rs.getString("description"));
+            holder[0] = item;
+            recipeId[0] = rs.getInt("recipe_id");
         }, id);
-        return item;
+        if (holder[0] != null) {
+            holder[0].setRecipe(Recipe.loadRecipe(recipeId[0]));
+        }
+        return holder[0];
     }
 
     @Override
     public List<MenuItem> loadAll() {
         List<MenuItem> result = new ArrayList<>();
-        SQLitePersistenceManager.executeQuery(SQL.SELECT_ALL_MENU_ITEMS, new ResultHandler() {
-            @Override
-            public void handle(ResultSet rs) throws SQLException {
-                MenuItem item = MenuItem.create();
-                item.setId(rs.getInt("id"));
-                item.setDescription(rs.getString("description"));
-                result.add(item);
-            }
+        List<Integer> recids = new ArrayList<>();
+        SQLitePersistenceManager.executeQuery(SQL.SELECT_ALL_MENU_ITEMS, rs -> {
+            MenuItem item = MenuItem.create();
+            item.setId(rs.getInt("id"));
+            item.setDescription(rs.getString("description"));
+            result.add(item);
+            recids.add(rs.getInt("recipe_id"));
         });
+        for (int i = 0; i < result.size(); i++) {
+            result.get(i).setRecipe(Recipe.loadRecipe(recids.get(i)));
+        }
         return result;
     }
 

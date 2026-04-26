@@ -107,6 +107,9 @@ public class KitchenTaskManager {
         if (currentSumSheet == null) {
             throw new UseCaseLogicException("Cannot assign task because there is no active summary sheet.");
         }
+        if (!currentSumSheet.containsTask(t)) {
+            throw new UseCaseLogicException("Task does not belong to the current summary sheet.");
+        }
         if (cook != null && !s.isBooked(cook)) {
             throw new UseCaseLogicException("Cook " + cook.getUserName() + " is not booked on the selected shift.");
         }
