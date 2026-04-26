@@ -1,4 +1,4 @@
-package catering.persistence.bridge.impl;
+package catering.persistence.strategy.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,8 +22,9 @@ import catering.businesslogic.menu.MenuItem;
 import catering.businesslogic.menu.Section;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
+import catering.persistence.strategy.MenuItemPersister;
 import catering.persistence.strategy.MenuPersister;
-import catering.persistence.strategy.impl.SQLiteMenuPersister;
+import catering.persistence.strategy.SectionPersister;
 import catering.util.LogManager;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -41,8 +42,10 @@ public class SQLiteMenuPersisterTest {
 
     @BeforeAll
     public void setUpOnce() {
-        // Initialize the persister
-        persister = new SQLiteMenuPersister();
+        // Initialize the persister composition (Strategy injection)
+        MenuItemPersister itemPersister = new SQLiteMenuItemPersister();
+        SectionPersister sectionPersister = new SQLiteSectionPersister(itemPersister);
+        persister = new SQLiteMenuPersister(sectionPersister, itemPersister);
 
         // Load an existing chef user from database
         testChef = User.load(5);

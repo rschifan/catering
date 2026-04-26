@@ -7,9 +7,11 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Recipe is a composite of KitchenProcess; holds only Preparation leaves.
+ * Composite node of the kitchen-process hierarchy. Holds Preparation leaves.
  */
-public class Recipe extends AbstractKitchenProcessComponent {
+public class Recipe extends KitchenProcessComponent {
+
+    private List<KitchenProcessComponent> children = new ArrayList<>();
 
     private Recipe() {
         super();
@@ -27,10 +29,17 @@ public class Recipe extends AbstractKitchenProcessComponent {
 
     @Override
     public void add(KitchenProcessComponent p) {
-        if (p.isRecipe()) {
-            throw new UnsupportedOperationException("Cannot add Recipe to Recipe");
-        }
         children.add(p);
+    }
+
+    @Override
+    public void remove(KitchenProcessComponent p) {
+        children.remove(p);
+    }
+
+    @Override
+    public List<KitchenProcessComponent> getChildren() {
+        return children;
     }
 
     /**
@@ -48,12 +57,7 @@ public class Recipe extends AbstractKitchenProcessComponent {
                 Recipe rec = new Recipe(rs.getString("name"));
                 rec.id = rs.getInt("id");
 
-                // Load additional properties if they exist in DB
-                try {
-                    rec.description = rs.getString("description");
-                } catch (SQLException e) {
-                    rec.description = "";
-                }
+                rec.description = rs.getString("description");
                 recipes.add(rec);
             }
         });
@@ -99,12 +103,7 @@ public class Recipe extends AbstractKitchenProcessComponent {
                 Recipe rec = new Recipe();
                 rec.name = rs.getString("name");
                 rec.id = id;
-                // Load additional properties if they exist in DB
-                try {
-                    rec.description = rs.getString("description");
-                } catch (SQLException e) {
-                    rec.description = "";
-                }
+                rec.description = rs.getString("description");
                 recHolder[0] = rec;
             }
         }, id); // Pass id as parameter
@@ -182,8 +181,7 @@ public class Recipe extends AbstractKitchenProcessComponent {
 
         String query = "INSERT INTO Recipes (name, description) VALUES(?, ?)";
 
-        SQLitePersistenceManager.executeUpdate(query, name, description);
-        id = SQLitePersistenceManager.getLastId();
+        id = SQLitePersistenceManager.executeInsert(query, name, description);
 
         // Save recipe-preparation relationships
         savePreparationRelationships();
@@ -217,7 +215,7 @@ public class Recipe extends AbstractKitchenProcessComponent {
         SQLitePersistenceManager.executeUpdate(deleteQuery, id);
 
         for (KitchenProcessComponent kp : children) {
-            if (!kp.isRecipe() && kp.getId() > 0) {
+            if (kp.getId() > 0) {
                 String insertQuery = "INSERT INTO RecipePreparations (recipe_id, preparation_id) VALUES(?, ?)";
                 SQLitePersistenceManager.executeUpdate(insertQuery, id, kp.getId());
             }

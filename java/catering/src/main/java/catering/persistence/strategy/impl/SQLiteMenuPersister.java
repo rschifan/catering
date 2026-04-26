@@ -15,7 +15,9 @@ import catering.businesslogic.menu.Section;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
 import catering.persistence.SQLitePersistenceManager;
+import catering.persistence.strategy.MenuItemPersister;
 import catering.persistence.strategy.MenuPersister;
+import catering.persistence.strategy.SectionPersister;
 import catering.util.LogManager;
 
 /**
@@ -25,6 +27,14 @@ import catering.util.LogManager;
 public class SQLiteMenuPersister implements MenuPersister {
 
     private static final Logger LOGGER = LogManager.getLogger(SQLiteMenuPersister.class);
+
+    private final SectionPersister sectionPersister;
+    private final MenuItemPersister itemPersister;
+
+    public SQLiteMenuPersister(SectionPersister sectionPersister, MenuItemPersister itemPersister) {
+        this.sectionPersister = sectionPersister;
+        this.itemPersister = itemPersister;
+    }
 
     // Organize SQL queries by operation type
     private static final class SQL {
@@ -79,48 +89,47 @@ public class SQLiteMenuPersister implements MenuPersister {
 
     private void insertSectionsAndItems(Menu menu) {
         if (!menu.getSections().isEmpty()) {
-            Section.insert(menu.getId(), menu.getSections());
+            sectionPersister.insert(menu.getId(), new ArrayList<>(menu.getSections()));
         }
 
         if (!menu.getFreeItems().isEmpty()) {
-            MenuItem.insert(menu.getId(), 0, menu.getFreeItems());
+            itemPersister.insert(menu.getId(), 0, menu.getFreeItems());
         }
     }
 
     @Override
     public void update(Menu menu) {
-        updateMenuAttributes(menu);
+        updateTitle(menu);
+        updatePublished(menu);
         updateFeatures(menu);
-        updatePositions(menu);
-    }
-
-    private void updateMenuAttributes(Menu menu) {
-        SQLitePersistenceManager.executeUpdate(SQL.UPDATE_MENU_TITLE, menu.getTitle(), menu.getId());
-        SQLitePersistenceManager.executeUpdate(SQL.UPDATE_MENU_PUBLISHED, menu.isPublished(), menu.getId());
-        SQLitePersistenceManager.executeUpdate(SQL.UPDATE_MENU_OWNER, menu.getOwner().getId(), menu.getId());
-    }
-
-    private void updatePositions(Menu menu) {
         updateSectionPositions(menu);
         updateFreeItemPositions(menu);
     }
 
+    @Override
+    public void updateTitle(Menu menu) {
+        SQLitePersistenceManager.executeUpdate(SQL.UPDATE_MENU_TITLE, menu.getTitle(), menu.getId());
+    }
+
+    @Override
+    public void updatePublished(Menu menu) {
+        SQLitePersistenceManager.executeUpdate(SQL.UPDATE_MENU_PUBLISHED, menu.isPublished(), menu.getId());
+    }
+
+    private static final String UPDATE_SECTION_POSITION = "UPDATE MenuSections SET position = ? WHERE id = ?";
+    private static final String UPDATE_FREE_ITEM_POSITION = "UPDATE MenuItems SET position = ? WHERE id = ?";
+
     private void updateSectionPositions(Menu menu) {
-        if (menu.getSections().isEmpty())
-            return;
-
-        for (Section section : menu.getSections()) {
-            LOGGER.info("Section: " + section.getId() + ": " + section.getName());
+        java.util.List<Section> sections = menu.getSections();
+        for (int i = 0; i < sections.size(); i++) {
+            SQLitePersistenceManager.executeUpdate(UPDATE_SECTION_POSITION, i, sections.get(i).getId());
         }
-
     }
 
     private void updateFreeItemPositions(Menu menu) {
-        if (menu.getFreeItems().isEmpty())
-            return;
-
-        for (MenuItem item : menu.getFreeItems()) {
-            LOGGER.info("MenuItem: " + item.getId() + ": " + item.getDescription());
+        java.util.List<MenuItem> items = menu.getFreeItems();
+        for (int i = 0; i < items.size(); i++) {
+            SQLitePersistenceManager.executeUpdate(UPDATE_FREE_ITEM_POSITION, i, items.get(i).getId());
         }
     }
 
@@ -148,8 +157,8 @@ public class SQLiteMenuPersister implements MenuPersister {
         menu.setOwner(User.load(rs.getInt("owner_id")));
         menu.setPublished(rs.getBoolean("published"));
         menu.setIntInUse(isMenuInUse(menuId));
-        menu.setSections(Section.loadSections(menuId));
-        menu.setFreeItems(MenuItem.loadMenuItems(menuId, 0));
+        menu.setSections(sectionPersister.loadAll(menuId));
+        menu.setFreeItems(itemPersister.load(menuId, 0));
         menu.setFeatures(loadMenuFeatures(menuId));
     }
 
@@ -172,7 +181,8 @@ public class SQLiteMenuPersister implements MenuPersister {
         SQLitePersistenceManager.executeUpdate(SQL.DELETE_MENU, menuId);
     }
 
-    private void updateFeatures(Menu menu) {
+    @Override
+    public void updateFeatures(Menu menu) {
         SQLitePersistenceManager.executeUpdate(SQL.DELETE_MENU_FEATURES, menu.getId());
         insertFeatures(menu);
     }

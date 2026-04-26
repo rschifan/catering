@@ -6,14 +6,21 @@ import catering.businesslogic.CatERing;
 import catering.businesslogic.UseCaseLogicException;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
+import catering.persistence.strategy.MenuPersister;
 
 public class MenuManager {
 
+    private final MenuPersister menuPersister;
     private Menu currentMenu;
     private ArrayList<MenuEventReceiver> eventReceivers;
 
-    public MenuManager() {
+    public MenuManager(MenuPersister menuPersister) {
+        this.menuPersister = menuPersister;
         eventReceivers = new ArrayList<>();
+    }
+
+    public Menu loadMenu(int id) {
+        return menuPersister.load(id);
     }
 
     public Menu createMenu() throws UseCaseLogicException {

@@ -1,38 +1,8 @@
 package catering.businesslogic.menu;
 
-import java.util.List;
-
 import catering.businesslogic.recipe.Recipe;
-import catering.persistence.strategy.MenuItemPersister;
-import catering.persistence.strategy.impl.SQLiteMenuItemPersister;
 
 public class MenuItem {
-
-    private static MenuItemPersister persister = new SQLiteMenuItemPersister();
-
-    public static void insert(int menuId, int sectionId, List<MenuItem> items) {
-        persister.insert(menuId, sectionId, items);
-    }
-
-    public static void insert(int menuId, int sectionId, MenuItem item, int position) {
-        persister.insert(menuId, sectionId, item, position);
-    }
-
-    public static List<MenuItem> loadMenuItems(int menuId, int sectionId) {
-        return persister.load(menuId, sectionId);
-    }
-
-    public static void saveSection(int sectionId, MenuItem item) {
-        persister.update(sectionId, item);
-    }
-
-    public static void saveDescription(MenuItem item) {
-        persister.update(item);
-    }
-
-    public static void removeItem(MenuItem item) {
-        persister.delete(item);
-    }
 
     public static MenuItem create(Recipe rec) {
         return new MenuItem(rec);

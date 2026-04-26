@@ -8,15 +8,21 @@ import catering.businesslogic.shift.ShiftManager;
 import catering.businesslogic.user.UserManager;
 import catering.persistence.KitchenTaskPersistence;
 import catering.persistence.MenuPersistence;
+import catering.persistence.strategy.MenuItemPersister;
+import catering.persistence.strategy.MenuPersister;
+import catering.persistence.strategy.SectionPersister;
+import catering.persistence.strategy.impl.SQLiteMenuItemPersister;
+import catering.persistence.strategy.impl.SQLiteMenuPersister;
+import catering.persistence.strategy.impl.SQLiteSectionPersister;
 
 public class CatERing {
-    private static CatERing singleInstance;
+    private static CatERing instance = null;
 
     public static CatERing getInstance() {
-        if (singleInstance == null) {
-            singleInstance = new CatERing();
+        if (instance == null) {
+            instance = new CatERing();
         }
-        return singleInstance;
+        return instance;
     }
 
     private MenuManager menuMgr;
@@ -30,14 +36,19 @@ public class CatERing {
     private KitchenTaskPersistence kitchenTaskPersistence;
 
     private CatERing() {
-        menuMgr = new MenuManager();
+        // Strategy composition: build leaf persisters first, then composite ones.
+        MenuItemPersister menuItemPersister = new SQLiteMenuItemPersister();
+        SectionPersister sectionPersister = new SQLiteSectionPersister(menuItemPersister);
+        MenuPersister menuPersister = new SQLiteMenuPersister(sectionPersister, menuItemPersister);
+
+        menuMgr = new MenuManager(menuPersister);
         recipeMgr = new RecipeManager();
         userMgr = new UserManager();
         eventMgr = new EventManager();
         kitchenTaskMgr = new KitchenTaskManager();
-        shiftMgr = new ShiftManager(); // Add this line to initialize ShiftManager
+        shiftMgr = new ShiftManager();
 
-        menuPersistence = new MenuPersistence();
+        menuPersistence = new MenuPersistence(menuPersister, sectionPersister, menuItemPersister);
         kitchenTaskPersistence = new KitchenTaskPersistence();
 
         menuMgr.addEventReceiver(menuPersistence);

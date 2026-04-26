@@ -238,7 +238,7 @@ public class EventManager {
             // Handle menu assignment if needed
             if (menuId > 0 && (service.getMenuId() == 0 || service.getMenuId() != menuId)) {
                 try {
-                    Menu menu = Menu.load(menuId);
+                    Menu menu = catering.businesslogic.CatERing.getInstance().getMenuManager().loadMenu(menuId);
                     if (menu != null) {
                         service.setMenu(menu);
                     }

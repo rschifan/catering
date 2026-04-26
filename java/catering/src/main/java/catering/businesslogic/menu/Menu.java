@@ -8,12 +8,8 @@ import java.util.Map;
 import catering.businesslogic.recipe.KitchenProcessComponent;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
-import catering.persistence.strategy.MenuPersister;
-import catering.persistence.strategy.impl.SQLiteMenuPersister;
 
 public class Menu {
-
-    private static final MenuPersister persister = new SQLiteMenuPersister();
 
     // Feature constants
     public static final String FEATURE_NEEDS_COOK = "needsCook";
@@ -55,30 +51,6 @@ public class Menu {
             String[] features) {
         Menu menu = new Menu(id, owner, title, published, inUse, features);
         return menu;
-    }
-
-    public static void insert(Menu m) {
-        persister.insert(m);
-    }
-
-    public static Menu load(int id) {
-        return persister.load(id);
-    }
-
-    public static void delete(Menu m) {
-        persister.delete(m);
-    }
-
-    public static void saveTitle(Menu m) {
-        persister.update(m);
-    }
-
-    public static void savePublished(Menu m) {
-        persister.update(m);
-    }
-
-    public static void saveFeatures(Menu m) {
-        persister.update(m);
     }
 
     private int id;
@@ -225,7 +197,14 @@ public class Menu {
     }
 
     public void moveFreeItem(MenuItem mi, int position) {
-
+        if (!freeItems.contains(mi)) {
+            throw new IllegalArgumentException("MenuItem is not a free item of this menu");
+        }
+        if (position < 0 || position >= freeItems.size()) {
+            throw new IndexOutOfBoundsException("Invalid position");
+        }
+        freeItems.remove(mi);
+        freeItems.add(position, mi);
     }
 
     public void changeItemSection(MenuItem mi, Section oldSec, Section newSec) {
@@ -279,17 +258,13 @@ public class Menu {
     }
 
     public ArrayList<KitchenProcessComponent> getKitchenProcesses() {
-
-        System.out.println("cazzo: " + this.title);
-
         ArrayList<KitchenProcessComponent> allKitchenProcesses = new ArrayList<>();
 
         for (MenuItem item : this.getItems()) {
-            System.out.println("Item: " + item.getDescription());
-            System.out.println("Recipe: " + item.getRecipe());
             Recipe recipe = item.getRecipe();
-            allKitchenProcesses.add(recipe);
-            allKitchenProcesses.addAll(recipe.getChildren());
+            if (recipe != null) {
+                allKitchenProcesses.add(recipe);
+            }
         }
 
         return allKitchenProcesses;

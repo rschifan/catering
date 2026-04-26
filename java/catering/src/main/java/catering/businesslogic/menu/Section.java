@@ -3,36 +3,7 @@ package catering.businesslogic.menu;
 import java.util.ArrayList;
 import java.util.List;
 
-import catering.persistence.strategy.SectionPersister;
-import catering.persistence.strategy.impl.SQLiteSectionPersister;
-
 public class Section {
-
-    private static final SectionPersister persister = new SQLiteSectionPersister();
-
-    public static void insert(int menuid, Section sec, int posInMenu) {
-        persister.insert(menuid, sec, posInMenu);
-    }
-
-    public static void insert(int menuid, List<Section> sections) {
-        persister.insert(menuid, new ArrayList<>(sections));
-    }
-
-    public static List<Section> loadSections(int menu_id) {
-        return persister.loadAll(menu_id);
-    }
-
-    public static void deleteSection(Section s) {
-        persister.delete(s);
-    }
-
-    public static void saveSectionName(Section s) {
-        persister.update(s);
-    }
-
-    public static void saveItemOrder(Section s) {
-        persister.update(s);
-    }
 
     public static Section create(String name) {
         return new Section(name);

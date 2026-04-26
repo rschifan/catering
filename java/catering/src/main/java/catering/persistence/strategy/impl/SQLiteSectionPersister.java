@@ -4,11 +4,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import catering.businesslogic.menu.MenuItem;
 import catering.businesslogic.menu.Section;
 import catering.persistence.BatchUpdateHandler;
 import catering.persistence.ResultHandler;
 import catering.persistence.SQLitePersistenceManager;
+import catering.persistence.strategy.MenuItemPersister;
 import catering.persistence.strategy.SectionPersister;
 
 /**
@@ -16,6 +18,12 @@ import catering.persistence.strategy.SectionPersister;
  * Handles database operations for Section objects using SQLite.
  */
 public class SQLiteSectionPersister implements SectionPersister {
+
+    private final MenuItemPersister itemPersister;
+
+    public SQLiteSectionPersister(MenuItemPersister itemPersister) {
+        this.itemPersister = itemPersister;
+    }
 
     // Organize SQL queries by operation type
     private static final class SQL {
@@ -50,23 +58,23 @@ public class SQLiteSectionPersister implements SectionPersister {
         }, sectionId);
 
         if (result[0] != null) {
-            result[0].setItems(MenuItem.loadMenuItems(-1, result[0].getId()));
+            result[0].setItems(itemPersister.load(-1, result[0].getId()));
         }
 
         return result[0];
     }
 
     @Override
-    public ArrayList<Section> loadAll() {
+    public List<Section> loadAll() {
 
-        ArrayList<Section> result = new ArrayList<>();
+        List<Section> result = new ArrayList<>();
 
         SQLitePersistenceManager.executeQuery(SQL.SELECT_ALL_SECTIONS, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Section s = Section.create(rs.getString("name"));
                 s.setId(rs.getInt("id"));
-                s.setItems(MenuItem.loadMenuItems(rs.getInt("menu_id"), s.getId()));
+                s.setItems(itemPersister.load(rs.getInt("menu_id"), s.getId()));
                 result.add(s);
             }
         });
@@ -75,15 +83,15 @@ public class SQLiteSectionPersister implements SectionPersister {
     }
 
     @Override
-    public ArrayList<Section> loadAll(int menuId) {
-        ArrayList<Section> result = new ArrayList<>();
+    public List<Section> loadAll(int menuId) {
+        List<Section> result = new ArrayList<>();
 
         SQLitePersistenceManager.executeQuery(SQL.SELECT_SECTIONS_BY_MENU, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 Section s = Section.create(rs.getString("name"));
                 s.setId(rs.getInt("id"));
-                s.setItems(MenuItem.loadMenuItems(menuId, s.getId()));
+                s.setItems(itemPersister.load(menuId, s.getId()));
                 result.add(s);
             }
         }, menuId);
@@ -94,12 +102,11 @@ public class SQLiteSectionPersister implements SectionPersister {
     @Override
     public void insert(int menuId, Section section, int position) {
 
-        SQLitePersistenceManager.executeUpdate(SQL.INSERT_SECTION, menuId, section.getName(), position);
-
-        section.setId(SQLitePersistenceManager.getLastId());
+        section.setId(SQLitePersistenceManager.executeInsert(
+                SQL.INSERT_SECTION, menuId, section.getName(), position));
 
         if (section.getItems().size() > 0) {
-            MenuItem.insert(menuId, section.getId(), section.getItems());
+            itemPersister.insert(menuId, section.getId(), section.getItems());
         }
     }
 
@@ -140,10 +147,4 @@ public class SQLiteSectionPersister implements SectionPersister {
         SQLitePersistenceManager.executeUpdate(SQL.DELETE_SECTION_ITEMS, section.getId());
         SQLitePersistenceManager.executeUpdate(SQL.DELETE_SECTION, section.getId());
     }
-
-    @Override
-    public int insert(Section entity) {
-        throw new UnsupportedOperationException("Unimplemented method 'insert'");
-    }
-
 }

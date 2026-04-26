@@ -128,16 +128,13 @@ public class Service {
         // Convert date to timestamp for storage
         Long dateTimestamp = (this.getDate() != null) ? this.getDate().getTime() : null;
 
-        SQLitePersistenceManager.executeUpdate(query,
+        this.setId(SQLitePersistenceManager.executeInsert(query,
                 this.getEventId(),
                 this.getName(),
                 dateTimestamp,
                 this.getTimeStart(),
                 this.getTimeEnd(),
-                this.getLocation());
-
-        // Get the ID of the newly inserted service
-        this.setId(SQLitePersistenceManager.getLastId());
+                this.getLocation()));
     }
 
     public void updateService() {
@@ -198,7 +195,7 @@ public class Service {
 
                 int menuId = rs.getInt("approved_menu_id");
                 if (menuId > 0)
-                    s.menu = Menu.load(menuId);
+                    s.menu = catering.businesslogic.CatERing.getInstance().getMenuManager().loadMenu(menuId);
 
                 services.add(s);
             }
@@ -255,7 +252,7 @@ public class Service {
                 int menuId = rs.getInt("approved_menu_id");
                 if (menuId > 0) {
                     try {
-                        s.menu = Menu.load(menuId);
+                        s.menu = catering.businesslogic.CatERing.getInstance().getMenuManager().loadMenu(menuId);
                     } catch (Exception e) {
                         LOGGER.warning("Failed to load menu (id: " + menuId + ") for service: " +
                                 s.name);

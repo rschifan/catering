@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Preparation represents an intermediate food preparation step.
+ * Leaf of the kitchen-process Composite hierarchy.
  */
-public class Preparation extends AbstractKitchenProcessComponent {
+public class Preparation extends KitchenProcessComponent {
 
     /**
      * Default constructor for loading from DB
@@ -28,13 +28,13 @@ public class Preparation extends AbstractKitchenProcessComponent {
     }
 
     @Override
-    public void add(KitchenProcessComponent p) {
-        throw new UnsupportedOperationException("Cannot add child to a Preparation");
+    public void add(KitchenProcessComponent p) throws KitchenProcessException {
+        throw new KitchenProcessException("Cannot add child to a Preparation");
     }
 
     @Override
-    public void remove(KitchenProcessComponent p) {
-        throw new UnsupportedOperationException("Cannot remove child from a Preparation");
+    public void remove(KitchenProcessComponent p) throws KitchenProcessException {
+        throw new KitchenProcessException("Cannot remove child from a Preparation");
     }
 
     @Override
@@ -57,12 +57,7 @@ public class Preparation extends AbstractKitchenProcessComponent {
                 Preparation prep = new Preparation(rs.getString("name"));
                 prep.id = rs.getInt("id");
 
-                // Load additional properties if they exist in DB
-                try {
-                    prep.description = rs.getString("description");
-                } catch (SQLException e) {
-                    prep.description = "";
-                }
+                prep.description = rs.getString("description");
 
                 preparations.add(prep);
             }
@@ -96,12 +91,7 @@ public class Preparation extends AbstractKitchenProcessComponent {
                 Preparation prep = new Preparation();
                 prep.name = rs.getString("name");
                 prep.id = id;
-                // Load additional properties if they exist in DB
-                try {
-                    prep.description = rs.getString("description");
-                } catch (SQLException e) {
-                    prep.description = "";
-                }
+                prep.description = rs.getString("description");
                 prepHolder[0] = prep;
             }
         }, id); // Pass id as parameter
@@ -120,8 +110,7 @@ public class Preparation extends AbstractKitchenProcessComponent {
 
         String query = "INSERT INTO Preparations (name, description) VALUES(?, ?)";
 
-        SQLitePersistenceManager.executeUpdate(query, name, description);
-        id = SQLitePersistenceManager.getLastId();
+        id = SQLitePersistenceManager.executeInsert(query, name, description);
         return true;
     }
 
