@@ -114,8 +114,11 @@ public class KitchenTaskManager {
         if (currentSummarySheet == null) {
             throw new UseCaseLogicException("Cannot assign task because there is no active summary sheet.");
         }
-        if (cook != null && !CatERing.getInstance().getShiftManager().isAvailable(cook, s)) {
-            throw new UseCaseLogicException("Cook " + cook.getUserName() + " is not available for the selected shift.");
+        // A cook can only be assigned a kitchen task on a shift they are booked on.
+        // ShiftManager.isAvailable returns true when the user is NOT booked (= free),
+        // so we throw if the cook is "available" (free) rather than booked.
+        if (cook != null && CatERing.getInstance().getShiftManager().isAvailable(cook, s)) {
+            throw new UseCaseLogicException("Cook " + cook.getUserName() + " is not booked on the selected shift.");
         }
         Assignment a = currentSummarySheet.addAssignment(t, s, cook);
         this.notifyAssignmentAdded(a);
@@ -139,15 +142,16 @@ public class KitchenTaskManager {
 
     public void modifyAssignment(Assignment ass, Shift shift, User cook)
             throws UseCaseLogicException {
-        Assignment a;
-
         if (currentSummarySheet == null)
             throw new UseCaseLogicException();
-        if (cook == null || CatERing.getInstance().getShiftManager().isAvailable(cook, shift))
-            a = currentSummarySheet.modifyAssignment(ass, shift, cook);
-        else
-            throw new UseCaseLogicException();
+        // Same precondition as assignTask: if a cook is specified, they must be booked
+        // on the shift. ShiftManager.isAvailable returns true when the user is free.
+        if (cook != null && CatERing.getInstance().getShiftManager().isAvailable(cook, shift)) {
+            throw new UseCaseLogicException(
+                    "Cook " + cook.getUserName() + " is not booked on the selected shift.");
+        }
 
+        Assignment a = currentSummarySheet.modifyAssignment(ass, shift, cook);
         notifyAssignmentChanged(a);
     }
 
