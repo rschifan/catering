@@ -97,7 +97,7 @@ This is the **transparent variant** of Composite (the abstract root declares the
 - ⚠️ **The symmetric API tempts misuse**. Code like `recipe.getChildren().get(0).add(prep)` works on a Recipe child but blows up on a Preparation child.
 
 ### Common mistake
-**Sneaking a boolean type tag back in.** After the refactor, `Recipe` and `Preparation` look symmetric — but the temptation is to write `kp.isRecipe()` and switch on it. That's a textbook **GRASP Polymorphism** violation — exactly what the pattern was meant to eliminate. The codebase has *one* surviving instance of this anti-pattern in `KitchenTask.boolean type` (used as a persistence discriminator) — that's a known limitation, see `IMPROVEMENTS.md §1.2`. **Don't replicate it elsewhere.**
+**Sneaking a boolean type tag back in.** After the refactor, `Recipe` and `Preparation` look symmetric — but the temptation is to write `kp.isRecipe()` and switch on it. That's a textbook **GRASP Polymorphism** violation — exactly what the pattern was meant to eliminate. The codebase has *one* surviving instance of this anti-pattern in `KitchenTask.boolean type` (used as a persistence discriminator) — a known limitation kept because removing it requires a schema change. **Don't replicate it elsewhere.**
 
 ### Try this
 1. Why is `Recipe.add()` declared without `throws`, but `KitchenProcessComponent.add()` is `abstract void add(...) throws KitchenProcessException;`? *(Hint: Java allows a subclass to override a method without re-declaring the parent's checked exception — the subtype's contract is narrower than the parent's. But a caller holding a `KitchenProcessComponent` reference must still handle the parent's `throws`.)*
@@ -212,7 +212,7 @@ The class-level JavaDoc on `MenuPersistence` explicitly names both Observer (thi
 ### Trade-offs
 - ✅ **Loose coupling**: `MenuManager` doesn't know what happens after a notification.
 - ✅ **Multiple observers**: the same event can drive persistence, logging, UI updates simultaneously, all wired in `CatERing` and invisible to the manager.
-- ⚠️ **Many methods on the interface**: 13 here. Adding a new event type requires touching the interface, every implementor, and every notification site. (Java 17+ sealed classes + pattern matching offer an alternative shape — see `IMPROVEMENTS.md §2.2`.)
+- ⚠️ **Many methods on the interface**: 13 here. Adding a new event type requires touching the interface, every implementor, and every notification site. (Java 17+ sealed classes + pattern matching offer a more concise alternative shape, but require Java-17-only language features.)
 - ⚠️ **Hidden execution order**: if observer registration order matters, the architecture is fragile. Currently no observer here depends on another observer's effect, so this isn't a problem — but it's worth being conscious of.
 
 ### Common mistake
@@ -372,7 +372,7 @@ The same shape applies to every other manager method: `defineSection`, `insertIt
 
 The branch is ready for the *patterns* curriculum, but it has acknowledged limitations that aren't lessons in pattern application — they're known design issues being held back for a future pass:
 
-- **`KitchenTask.boolean type`** — a surviving boolean-tag-as-type-discriminator. This is the Polymorphism anti-pattern that the Composite refactor is meant to eliminate; one instance survives because removing it requires a schema change. See `IMPROVEMENTS.md §1.2`.
+- **`KitchenTask.boolean type`** — a surviving boolean-tag-as-type-discriminator. This is the Polymorphism anti-pattern that the Composite refactor is meant to eliminate; one instance survives because removing it requires a schema change.
 - **`SQLitePersistenceManager` swallows `SQLException`** — every database error becomes a silent `0` / `null`. **Don't model your error handling on this.**
 - **`Menu.getSections()` and `Menu.getFreeItems()` return backing lists** — encapsulation leak. **Don't model your getters on this.**
 - **`SummarySheetTest.testTaskAssignment` writes `shift_id = 0`** to the database via a public constructor on `Shift`. **Don't model your tests on this one.** The other test classes are fine.
@@ -413,14 +413,6 @@ src/test/java/catering/
   businesslogic/kitchen/SummarySheetTest.java            ← integration test (live SQLite)
   persistence/strategy/impl/SQLiteMenuPersisterTest.java ← persistence test
 ```
-
----
-
-## Companion documents
-
-- [`REVIEW-patterns.md`](REVIEW-patterns.md) — catalogue of conformance findings against course materials, with severities.
-- [`IMPROVEMENTS.md`](IMPROVEMENTS.md) — forward-looking opportunities (Repository, domain events, in-memory test DB, etc.).
-- [`STUDENT-READINESS.md`](STUDENT-READINESS.md) — assessment of whether this branch is ready to hand to students.
 
 ---
 
