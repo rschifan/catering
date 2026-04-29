@@ -10,7 +10,7 @@ The implementation covers the *Gestire menù* and *Gestire compiti cucina* use c
 
 ```bash
 mvn compile        # build
-mvn test           # 48 / 48 tests pass
+mvn test           # 51 / 51 tests pass
 mvn exec:java      # runs catering.businesslogic.CatERing.main
 ```
 
@@ -56,7 +56,7 @@ If you're new to the codebase, follow the wiring outwards from one entry point:
 
 ## Tests
 
-`src/test/java/catering/` contains 48 tests organised by use case:
+`src/test/java/catering/` contains 51 tests organised by use case:
 
 - `businesslogic/menu/MenuTest.java` — domain tests for the `Menu` aggregate.
 - `businesslogic/menu/MenuManagerTest.java` — system-operation tests for *Gestire menù*. Uses `@Nested` classes per operation (`CreateMenu`, `DefineSection`, `InsertItem`, `MoveSection`, `ChooseMenu`, `ChooseMenuForCopy`, `DeleteMenu`) — worth studying as a pattern for organising tests around SSD operations.

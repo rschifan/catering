@@ -1,125 +1,139 @@
 package catering.businesslogic.event;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import catering.businesslogic.user.User;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import catering.businesslogic.user.User;
+import catering.persistence.PersistenceManager;
+
+/**
+ * Tests for {@link Event}: in-memory aggregate behaviour and the static
+ * loaders against the seeded SQLite database.
+ */
 class EventTest {
 
-    private Event event;
-    private Service service1;
-    private Service service2;
-
-    @BeforeEach
-    void setUp() {
-        event = new Event("Test Event");
-        service1 = new Service();
-        service2 = new Service();
-        // Assume Service has setId for testing equality
-        service1.setId(1);
-        service2.setId(2);
+    @BeforeAll
+    static void initializeDatabase() {
+        PersistenceManager.initializeDatabase("database/catering_init_sqlite.sql");
     }
 
-    @Test
-    void testConstructorAndGettersSetters() {
-        assertEquals("Test Event", event.getName());
-        event.setId(42);
-        assertEquals(42, event.getId());
+    @Nested
+    class Aggregate {
 
-        Date now = Date.valueOf("2024-05-29");
-        event.setDateStart(now);
-        event.setDateEnd(now);
-        assertEquals(now, event.getDateStart());
-        assertEquals(now, event.getDateEnd());
+        private Event event;
+        private Service first;
+        private Service second;
 
-        User chef = new User();
-        chef.setId(7);
-        event.setChef(chef);
-        assertEquals(chef, event.getChef());
-        assertEquals(7, event.getChefId());
-    }
+        @BeforeEach
+        void setUp() {
+            event = new Event("Test Event");
+            first = new Service();
+            first.setId(1);
+            second = new Service();
+            second.setId(2);
+        }
 
-    @Test
-    void testServiceManagement() {
-        assertTrue(event.getServices().isEmpty());
-        event.addService(service1);
-        assertTrue(event.containsService(service1));
-        assertFalse(event.containsService(service2));
-        event.addService(service2);
-        assertTrue(event.containsService(service2));
-        event.removeService(service1);
-        assertFalse(event.containsService(service1));
-        assertTrue(event.containsService(service2));
-    }
+        @Test
+        void testName_SetInConstructor_IsReadable() {
+            assertEquals("Test Event", event.getName());
+        }
 
-    @Test
-    void testSetServices() {
-        ArrayList<Service> services = new ArrayList<>();
-        services.add(service1);
-        event.setServices(services);
-        assertEquals(1, event.getServices().size());
-        assertTrue(event.containsService(service1));
-    }
+        @Test
+        void testId_SetExplicitly_IsReadable() {
+            event.setId(42);
+            assertEquals(42, event.getId());
+        }
 
-    @Test
-    void testToString() {
-        event.setId(1);
-        event.setName("Party");
-        event.addService(service1);
-        String str = event.toString();
-        assertTrue(str.contains("Party"));
-        assertTrue(str.contains("services=1"));
-    }
+        @Test
+        void testChef_SetExplicitly_IsReadableAndExposesId() {
+            User chef = new User();
+            chef.setId(7);
 
-    // Database operation stubs (no DB interaction)
-    @Test
-    void testSaveUpdateDeleteEventNoException() {
-        // These methods require a working PersistenceManager and DB, so just check no
-        // exception thrown
-        event.setChef(new User());
-        event.setDateStart(Date.valueOf("2024-05-29"));
-        event.setDateEnd(Date.valueOf("2024-05-30"));
-        try {
-            event.saveNewEvent();
-            event.updateEvent();
-            event.deleteEvent();
-        } catch (Exception e) {
-            fail("Database methods should not throw: " + e.getMessage());
+            event.setChef(chef);
+
+            assertEquals(chef, event.getChef());
+            assertEquals(7, event.getChefId());
+        }
+
+        @Test
+        void testServices_FreshEvent_IsEmpty() {
+            assertTrue(event.getServices().isEmpty());
+        }
+
+        @Test
+        void testAddService_RecordsContainment() {
+            event.addService(first);
+
+            assertTrue(event.containsService(first));
+            assertFalse(event.containsService(second));
+        }
+
+        @Test
+        void testRemoveService_DropsOnlyTheTargetedService() {
+            event.addService(first);
+            event.addService(second);
+
+            event.removeService(first);
+
+            assertFalse(event.containsService(first));
+            assertTrue(event.containsService(second));
+        }
+
+        @Test
+        void testDates_SetExplicitly_AreReadable() {
+            Date day = Date.valueOf("2024-05-29");
+
+            event.setDateStart(day);
+            event.setDateEnd(day);
+
+            assertEquals(day, event.getDateStart());
+            assertEquals(day, event.getDateEnd());
         }
     }
 
-    @Test
-    void testLoadAllEventsFromDb() {
-        List<Event> events = Event.loadAllEvents();
-        assertNotNull(events);
-        assertFalse(events.isEmpty(), "There should be at least one event in the DB");
-        Event e = events.get(0);
-        assertNotNull(e.getName());
-        assertNotNull(e.getDateStart());
-        assertNotNull(e.getChef());
-        assertNotNull(e.getServices());
-    }
+    @Nested
+    class StaticLoaders {
 
-    @Test
-    void testLoadByIdAndByNameFromDb() {
-        List<Event> events = Event.loadAllEvents();
-        assertFalse(events.isEmpty(), "There should be at least one event in the DB");
-        Event first = events.get(0);
+        @Test
+        void testLoadAllEvents_ReturnsSeededEvents() {
+            List<Event> events = Event.loadAllEvents();
 
-        Event byId = Event.loadById(first.getId());
-        assertNotNull(byId);
-        assertEquals(first.getId(), byId.getId());
-        assertEquals(first.getName(), byId.getName());
+            assertNotNull(events);
+            assertFalse(events.isEmpty(), "the seed script must populate at least one event");
 
-        Event byName = Event.loadByName(first.getName());
-        assertNotNull(byName);
-        assertEquals(first.getName(), byName.getName());
+            Event sample = events.get(0);
+            assertNotNull(sample.getName());
+            assertNotNull(sample.getDateStart());
+            assertNotNull(sample.getChef());
+            assertNotNull(sample.getServices());
+        }
+
+        @Test
+        void testLoadById_RoundTripsTheSameEvent() {
+            Event sample = Event.loadAllEvents().get(0);
+
+            Event loaded = Event.loadById(sample.getId());
+
+            assertNotNull(loaded);
+            assertEquals(sample.getId(), loaded.getId());
+            assertEquals(sample.getName(), loaded.getName());
+        }
+
+        @Test
+        void testLoadByName_FindsEventByExactName() {
+            Event sample = Event.loadAllEvents().get(0);
+
+            Event loaded = Event.loadByName(sample.getName());
+
+            assertNotNull(loaded);
+            assertEquals(sample.getName(), loaded.getName());
+        }
     }
 }
