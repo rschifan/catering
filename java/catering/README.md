@@ -1,6 +1,6 @@
 # CAT & RING
 
-Java backend for the **Sviluppo e Architettura del Software t1** course case study (catering management) at the University of Turin.
+Java backend for the **Sviluppo e Architettura del Software** course case study (catering management) at the University of Turin.
 
 The implementation covers the *Gestire menù* and *Gestire compiti cucina* use cases, plus supporting infrastructure for events, services, shifts, users, recipes, and preparations. There is no UI — the project is exercised from JUnit tests and `main` methods.
 
