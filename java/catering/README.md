@@ -12,7 +12,7 @@ This document explains, for each pattern: what problem it solves, why it's used 
 
 ```bash
 mvn compile        # build
-mvn test           # 10 / 10 tests pass
+mvn test           # 52 / 52 tests pass
 mvn exec:java      # runs catering.businesslogic.CatERing.main
 ```
 
@@ -364,9 +364,14 @@ src/main/java/catering/
       impl/
         SQLite*Persister.java         ← concrete Strategy implementations
 src/test/java/catering/
-  businesslogic/menu/MenuTest.java                       ← Menu unit test
-  businesslogic/kitchen/SummarySheetTest.java            ← integration test (live SQLite)
-  persistence/strategy/impl/SQLiteMenuPersisterTest.java ← persistence test
+  businesslogic/menu/
+    MenuTest.java                   ← domain unit tests for the Menu aggregate
+    MenuManagerTest.java            ← system-operation tests (one @Nested per DSD operation)
+  businesslogic/event/EventTest.java          ← Event aggregate + DB loader tests
+  businesslogic/kitchen/
+    KitchenTaskManagerTest.java     ← system-operation tests for "Gestire compiti cucina"
+    SummarySheetTest.java           ← integration test for the generate-and-assign flow
+  persistence/strategy/impl/SQLiteMenuPersisterTest.java ← Strategy CRUD round-trips
 ```
 
 ---
