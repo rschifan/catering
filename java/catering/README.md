@@ -1,6 +1,6 @@
 # CAT & RING — design patterns and GRASP
 
-A worked reference for the **Sviluppo e Architettura del Software** course at the University of Turin. The implementation covers the *Gestire menù* and *Gestire compiti cucina* use cases and applies five patterns from the curriculum: **Singleton**, **Composite**, **Strategy**, **Observer**, and **Pure Fabrication** (GRASP).
+A worked reference for the **Sviluppo delle Applicazioni Software** course at the University of Turin. The implementation covers the *Gestire menù* and *Gestire compiti cucina* use cases and applies five patterns from the curriculum: **Singleton**, **Composite**, **Strategy**, **Observer**, and **Pure Fabrication** (GRASP).
 
 After reading the slides for a pattern, you can open one or two files here and see exactly how that pattern looks when it lives inside a running Java codebase.
 
