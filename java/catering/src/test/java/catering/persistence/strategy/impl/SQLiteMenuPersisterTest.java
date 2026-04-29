@@ -1,268 +1,188 @@
 package catering.persistence.strategy.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.logging.Logger;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.TestInstance;
 
+import catering.businesslogic.CatERing;
 import catering.businesslogic.menu.Menu;
 import catering.businesslogic.menu.MenuItem;
 import catering.businesslogic.menu.Section;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
+import catering.persistence.SQLitePersistenceManager;
 import catering.persistence.strategy.MenuItemPersister;
 import catering.persistence.strategy.MenuPersister;
+import catering.persistence.strategy.PreparationPersister;
+import catering.persistence.strategy.RecipePersister;
 import catering.persistence.strategy.SectionPersister;
-import catering.util.LogManager;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // Allows non-static @BeforeAll methods
-public class SQLiteMenuPersisterTest {
+/**
+ * Integration tests for {@link SQLiteMenuPersister} against the seeded
+ * SQLite database. Each test creates its own menu, exercises one CRUD
+ * scenario, and cleans up — so tests are independent and can run in any
+ * order.
+ */
+class SQLiteMenuPersisterTest {
 
-    private static final Logger LOGGER = LogManager.getLogger(SQLiteMenuPersisterTest.class);
-
-    private MenuPersister persister;
-    private Menu testMenu;
-    private int testMenuId;
-    private User testChef;
-    private Recipe bruschetta;
-    private Recipe caprese;
+    private static MenuPersister persister;
+    private static User chef;
+    private static Recipe bruschetta;
+    private static Recipe caprese;
 
     @BeforeAll
-    public void setUpOnce() {
-        // Initialize the persister composition (Strategy injection).
-        // Wire leaves first, then composites: Preparation → Recipe → MenuItem → Section → Menu.
-        catering.persistence.strategy.PreparationPersister prepPersister =
-                new SQLitePreparationPersister();
-        catering.persistence.strategy.RecipePersister recipePersister =
-                new SQLiteRecipePersister(prepPersister);
+    static void initializeRuntime() {
+        SQLitePersistenceManager.initializeDatabase("database/catering_init_sqlite.sql");
+        persister = wireMenuPersisterChain();
+        chef = User.load(5);
+        bruschetta = CatERing.getInstance().getRecipeManager().loadRecipe(1);
+        caprese = CatERing.getInstance().getRecipeManager().loadRecipe(2);
+
+        assertNotNull(chef, "fixture: chef must exist in the seed data");
+        assertTrue(chef.isChef(), "fixture: user 5 must have the Chef role");
+        assertNotNull(bruschetta, "fixture: recipe 1 (bruschetta) must exist in the seed data");
+        assertNotNull(caprese, "fixture: recipe 2 (caprese) must exist in the seed data");
+    }
+
+    /** Wires the Strategy composition leaves-first, mirroring {@code CatERing}. */
+    private static MenuPersister wireMenuPersisterChain() {
+        PreparationPersister preparationPersister = new SQLitePreparationPersister();
+        RecipePersister recipePersister = new SQLiteRecipePersister(preparationPersister);
         MenuItemPersister itemPersister = new SQLiteMenuItemPersister(recipePersister);
         SectionPersister sectionPersister = new SQLiteSectionPersister(itemPersister);
-        persister = new SQLiteMenuPersister(sectionPersister, itemPersister);
-
-        // Load an existing chef user from database
-        testChef = User.load(5);
-        assertNotNull(testChef, "Test setup failed: chef not found in database");
-        assertTrue(testChef.isChef(), "Test user must have chef role");
-
-        // Load test recipes
-        bruschetta = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadRecipe(1);
-        caprese = catering.businesslogic.CatERing.getInstance().getRecipeManager().loadRecipe(2);
-
-        assertNotNull(bruschetta, "Test setup failed: recipe not found in database");
-        assertNotNull(caprese, "Test setup failed: recipe not found in database");
-
-        // Create a test menu
-        testMenu = Menu.create(testChef, "SQLite Persister Test Menu");
-
-        // Add sections and items to the menu
-        Section appetizers = testMenu.addSection("Appetizers");
-        testMenu.addItem(bruschetta, appetizers, "Bruschetta");
-        testMenu.addItem(caprese, appetizers, "Caprese");
-        testMenu.setPublished(true);
-        testMenu.setBuffet(true);
+        return new SQLiteMenuPersister(sectionPersister, itemPersister);
     }
+
+    private Menu menu;
 
     @BeforeEach
-    public void setUp() {
-        if (testMenuId > 0) {
-            testMenu.setId(testMenuId);
-        }
+    void freshUnsavedMenu() {
+        menu = Menu.create(chef, "Test Menu");
+        Section appetizers = menu.addSection("Appetizers");
+        menu.addItem(bruschetta, appetizers, "Bruschetta");
+        menu.addItem(caprese, appetizers, "Caprese");
+        menu.setPublished(true);
+        menu.setBuffet(true);
     }
 
     @Test
-    @Order(1)
-    @DisplayName("Create a new menu and save it to the database")
-    public void testCreateMenu() {
+    void insert_assignsAGeneratedIdAndPersistsTheMenu() {
+        int newId = persister.insert(menu);
 
-        testMenuId = persister.insert(testMenu);
+        assertTrue(newId > 0, "insert must return the generated primary key");
+        assertEquals(menu.getId(), newId, "the menu instance must reflect the generated id");
+        assertNotNull(persister.load(newId), "the inserted menu must be loadable by id");
 
-        assertTrue(testMenuId > 0, "Menu should be inserted successfully");
-        assertNotNull(persister.load(testMenuId), "Loaded menu should not be null after insertion");
-        assertEquals(testMenu.getId(), testMenuId, "Inserted menu ID should match the test menu ID");
+        persister.delete(menu);
     }
 
     @Test
-    @Order(2)
-    @DisplayName("Load menu from database")
-    public void testLoadMenu() {
+    void load_byKnownId_returnsAnEqualMenu() {
+        persister.insert(menu);
 
-        Menu loadedMenu = persister.load(testMenu.getId());
+        Menu loaded = persister.load(menu.getId());
 
-        assertNotNull(loadedMenu, "Loaded menu should not be null");
-        assertEquals(testMenu.getId(), loadedMenu.getId(), "Loaded menu ID should match");
-        assertEquals(testMenu.getTitle(), loadedMenu.getTitle(), "Loaded menu title should match");
-        assertEquals(testMenu, loadedMenu);
+        assertNotNull(loaded);
+        assertEquals(menu.getId(), loaded.getId());
+        assertEquals(menu.getTitle(), loaded.getTitle());
+        assertEquals(menu, loaded);
+
+        persister.delete(menu);
     }
 
     @Test
-    @Order(3)
-    @DisplayName("Update menu in the database")
-    public void testUpdateMenu() {
-
-        testMenu.setTitle("Updated Menu Title");
-        testMenu.setPublished(false);
-
-        persister.update(testMenu);
-
-        Menu updatedMenu = persister.load(testMenu.getId());
-
-        assertNotNull(updatedMenu, "Updated menu should not be null");
-        assertEquals("Updated Menu Title", updatedMenu.getTitle(), "Updated menu title should match");
-        assertEquals(false, updatedMenu.isPublished(), "Updated menu published status should match");
+    void load_byUnknownId_returnsNull() {
+        assertNull(persister.load(999_999));
     }
 
     @Test
-    @Order(5)
-    @DisplayName("Load non-existent menu returns null")
-    public void testLoadNonExistentMenu() {
-        // Try to load a menu with a non-existent ID
-        int nonExistentId = 999999;
-        Menu loadedMenu = persister.load(nonExistentId);
+    void update_persistsTitleAndPublishedChanges() {
+        persister.insert(menu);
+        menu.setTitle("Updated Title");
+        menu.setPublished(false);
 
-        // Verify the result is null
-        assertNull(loadedMenu, "Loading non-existent menu should return null");
+        persister.update(menu);
+
+        Menu reloaded = persister.load(menu.getId());
+        assertEquals("Updated Title", reloaded.getTitle());
+        assertFalse(reloaded.isPublished());
+
+        persister.delete(menu);
     }
 
     @Test
-    @Order(6)
-    @DisplayName("Insert menu with complex structure")
-    public void testInsertComplexMenu() {
-        // Create a complex menu with multiple sections and items
-        Menu complexMenu = Menu.create(testChef, "Complex Structure Menu");
+    void insert_withMultipleSectionsAndFreeItems_roundTripsTheStructure() {
+        Menu complex = Menu.create(chef, "Complex Menu");
+        Section starters = complex.addSection("Starters");
+        Section mains = complex.addSection("Main Dishes");
+        Section desserts = complex.addSection("Desserts");
+        complex.addItem(bruschetta, starters, "Bruschetta Special");
+        complex.addItem(caprese, starters, "Caprese Salad");
+        complex.addItem(bruschetta, mains, "Pasta Dish");
+        complex.addItem(caprese, mains, "Steak Dish");
+        complex.addItem(bruschetta, desserts, "Tiramisu");
+        complex.addItem(bruschetta, null, "Free Item 1");
+        complex.addItem(caprese, null, "Free Item 2");
 
-        // Add multiple sections
-        Section appetizers = complexMenu.addSection("Starters");
-        Section mainCourse = complexMenu.addSection("Main Dishes");
-        Section desserts = complexMenu.addSection("Desserts");
+        int id = persister.insert(complex);
+        Menu loaded = persister.load(id);
 
-        // Add items to sections (directly without storing references)
-        complexMenu.addItem(bruschetta, appetizers, "Bruschetta Special");
-        complexMenu.addItem(caprese, appetizers, "Caprese Salad");
-        complexMenu.addItem(bruschetta, mainCourse, "Pasta Dish");
-        complexMenu.addItem(caprese, mainCourse, "Steak Dish");
-        complexMenu.addItem(bruschetta, desserts, "Tiramisu");
+        assertEquals(3, loaded.getSectionCount());
+        assertEquals(2, loaded.getFreeItemCount());
+        assertEquals(2, loaded.getSection(0).getItemsCount());
+        assertEquals(2, loaded.getSection(1).getItemsCount());
+        assertEquals(1, loaded.getSection(2).getItemsCount());
 
-        // Add free items (not in any section)
-        complexMenu.addItem(bruschetta, null, "Special Item 1");
-        complexMenu.addItem(caprese, null, "Special Item 2");
-
-        // Insert the menu
-        int menuId = persister.insert(complexMenu);
-
-        // Verify insertion was successful
-        assertTrue(menuId > 0, "Complex menu should be inserted successfully");
-
-        // Load the inserted menu
-        Menu loadedMenu = persister.load(menuId);
-        assertNotNull(loadedMenu, "Loaded menu should not be null");
-
-        // Verify sections count
-        assertEquals(3, loadedMenu.getSectionCount(), "Should have 3 sections");
-
-        // Verify free items count
-        assertEquals(2, loadedMenu.getFreeItemCount(), "Should have 2 free items");
-
-        // Verify items in sections
-        assertEquals(2, loadedMenu.getSection(0).getItemsCount(), "First section should have 2 items");
-        assertEquals(2, loadedMenu.getSection(1).getItemsCount(), "Second section should have 2 items");
-        assertEquals(1, loadedMenu.getSection(2).getItemsCount(), "Third section should have 1 item");
-
-        // Clean up
-        persister.delete(loadedMenu);
+        persister.delete(loaded);
     }
 
     @Test
-    @Order(7)
-    @DisplayName("Insert menu with only free items")
-    public void testInsertMenuWithOnlyFreeItems() {
-        // Create a menu with only free items (no sections)
-        Menu freeItemsMenu = Menu.create(testChef, "Free Items Only Menu");
+    void insert_withOnlyFreeItems_persistsThemAsFreeItems() {
+        Menu freeOnly = Menu.create(chef, "Free Items Only");
+        freeOnly.addItem(bruschetta, null, "Free Bruschetta");
+        freeOnly.addItem(caprese, null, "Free Caprese");
+        freeOnly.addItem(bruschetta, null, "Another Free Item");
 
-        // Add several free items
-        freeItemsMenu.addItem(bruschetta, null, "Free Bruschetta");
-        freeItemsMenu.addItem(caprese, null, "Free Caprese");
-        freeItemsMenu.addItem(bruschetta, null, "Another Free Item");
+        int id = persister.insert(freeOnly);
+        Menu loaded = persister.load(id);
 
-        // Insert the menu
-        int menuId = persister.insert(freeItemsMenu);
+        assertEquals(0, loaded.getSectionCount());
+        assertEquals(3, loaded.getFreeItemCount());
+        assertTrue(containsItemDescribed(loaded, "Free Bruschetta"));
+        assertTrue(containsItemDescribed(loaded, "Free Caprese"));
 
-        // Verify insertion was successful
-        assertTrue(menuId > 0, "Free items menu should be inserted successfully");
+        persister.delete(loaded);
+    }
 
-        // Load the inserted menu
-        Menu loadedMenu = persister.load(menuId);
-        assertNotNull(loadedMenu, "Loaded menu should not be null");
+    @Test
+    void insert_withFeatures_roundTripsTheFeatureFlags() {
+        Menu withFeatures = Menu.create(chef, "Features Test Menu");
+        withFeatures.setBuffet(true);
+        withFeatures.setFingerFood(true);
+        withFeatures.setNeedsCook(false);
+        withFeatures.setNeedsKitchen(true);
+        withFeatures.setWarmDishes(false);
 
-        // Verify no sections
-        assertEquals(0, loadedMenu.getSectionCount(), "Should have no sections");
+        int id = persister.insert(withFeatures);
+        Menu loaded = persister.load(id);
 
-        // Verify free items count
-        assertEquals(3, loadedMenu.getFreeItemCount(), "Should have 3 free items");
+        assertTrue(loaded.isBuffet());
+        assertTrue(loaded.isFingerFood());
+        assertFalse(loaded.needsCook());
+        assertTrue(loaded.needsKitchen());
+        assertFalse(loaded.hasWarmDishes());
 
-        // Verify free item descriptions
-        boolean foundBruschetta = false;
-        boolean foundCaprese = false;
+        persister.delete(loaded);
+    }
 
-        for (MenuItem item : loadedMenu.getFreeItems()) {
-            if (item.getDescription().equals("Free Bruschetta")) {
-                foundBruschetta = true;
-            } else if (item.getDescription().equals("Free Caprese")) {
-                foundCaprese = true;
+    private static boolean containsItemDescribed(Menu menu, String description) {
+        for (MenuItem item : menu.getFreeItems()) {
+            if (description.equals(item.getDescription())) {
+                return true;
             }
         }
-
-        assertTrue(foundBruschetta, "Should find 'Free Bruschetta' item");
-        assertTrue(foundCaprese, "Should find 'Free Caprese' item");
-
-        // Clean up
-        persister.delete(loadedMenu);
-    }
-
-    @Test
-    @Order(8)
-    @DisplayName("Test loading menu with features")
-    public void testLoadMenuWithFeatures() {
-        // Create a menu with specific features enabled
-        Menu featuresMenu = Menu.create(testChef, "Features Test Menu");
-
-        // Set specific features
-        featuresMenu.setBuffet(true);
-        featuresMenu.setFingerFood(true);
-        featuresMenu.setNeedsCook(false);
-        featuresMenu.setNeedsKitchen(true);
-        featuresMenu.setWarmDishes(false);
-
-        // Insert the menu
-        int menuId = persister.insert(featuresMenu);
-
-        // Verify insertion was successful
-        assertTrue(menuId > 0, "Features menu should be inserted successfully");
-
-        // Load the inserted menu
-        Menu loadedMenu = persister.load(menuId);
-        assertNotNull(loadedMenu, "Loaded menu should not be null");
-
-        // Verify features were preserved
-        assertTrue(loadedMenu.isBuffet(), "Buffet feature should be true");
-        assertTrue(loadedMenu.isFingerFood(), "FingerFood feature should be true");
-        assertFalse(loadedMenu.needsCook(), "NeedsCook feature should be false");
-        assertTrue(loadedMenu.needsKitchen(), "NeedsKitchen feature should be true");
-        assertFalse(loadedMenu.hasWarmDishes(), "WarmDishes feature should be false");
-
-        // Clean up
-        persister.delete(loadedMenu);
+        return false;
     }
 }
